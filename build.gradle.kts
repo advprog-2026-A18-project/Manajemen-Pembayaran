@@ -60,6 +60,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
+    testImplementation("com.h2database:h2")
 }
 
 tasks.withType<Test> {

@@ -8,6 +8,16 @@ jobs:
 
   Continuous-Integration:
     runs-on: ubuntu-22.04
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: root
+          POSTGRES_DB: mysawit_auth
+        ports:
+          - 5433:5432
     steps:
 
       - name: Check out the Git repository
