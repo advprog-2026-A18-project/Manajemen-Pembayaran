@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Integrasi Manajemen Pembayaran</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .card { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+<h1>Data Pembayaran Dummy</h1>
+<button onclick="fetchData()">Ambil Data dari Backend</button>
+<div id="result-container" style="margin-top: 20px;"></div>
+
+<script>
+    async function fetchData() {
+        const container = document.getElementById('result-container');
+        container.innerHTML = "<i>Loading...</i>";
+
+        try {
+            const response = await fetch('http://localhost:8085/api/dummy/data');
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+
+            container.innerHTML = "";
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `
+                        <strong>ID:</strong> ${item.id} <br>
+                        <strong>Pesan:</strong> ${item.message} <br>
+                        <strong>Status:</strong> ${item.status}
+                    `;
+                container.appendChild(div);
+            });
+        } catch (error) {
+            container.innerHTML = `<span style="color: red;">Gagal mengambil data: ${error.message}</span>`;
+        }
+    }
+</script>
+</body>
+</html>
