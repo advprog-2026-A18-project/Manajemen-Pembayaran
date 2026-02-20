@@ -29,4 +29,22 @@ class DummyDataTest {
         assertEquals("Menunggu konfirmasi mandor", data.getMessage());
         assertEquals("PENDING", data.getStatus());
     }
+
+    @Test
+    void testEqualsAndHashCode() {
+        DummyData data1 = DummyData.builder().id("1").build();
+        DummyData data2 = DummyData.builder().id("1").build();
+        DummyData data3 = DummyData.builder().id("2").build();
+
+        assertEquals(data1, data2);
+        assertEquals(data1.hashCode(), data2.hashCode());
+        assert(data1.equals(data2));
+        assert(!data1.equals(data3));
+    }
+
+    @Test
+    void testNoArgsConstructor() {
+        DummyData data = new DummyData();
+        assertEquals(null, data.getId());
+    }
 }
