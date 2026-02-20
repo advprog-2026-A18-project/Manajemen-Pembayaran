@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Integrasi Manajemen Pembayaran</title>
+    <title>Manajemen Pembayaran</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
         .card { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
@@ -27,8 +27,13 @@
             }
 
             const data = await response.json();
-
             container.innerHTML = "";
+
+            if (data.length === 0) {
+                container.innerHTML = "Data di database PostgreSQL masih kosong! Belum ada data yang bisa ditampilkan.</i>";
+                return;
+            }
+
             data.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'card';

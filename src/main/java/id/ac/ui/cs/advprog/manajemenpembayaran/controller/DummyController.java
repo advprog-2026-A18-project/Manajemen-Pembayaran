@@ -21,7 +21,6 @@ public class DummyController {
 
     @GetMapping("/data")
     public ResponseEntity<Set<DummyData>> getDummyData() {
-        // Mengambil data unik dari service yang terhubung ke database
         Set<DummyData> dataFromDatabase = dummyDataService.getAllData();
 
         return ResponseEntity.ok(dataFromDatabase);
