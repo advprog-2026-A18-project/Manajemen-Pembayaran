@@ -21,12 +21,12 @@ jobs:
     steps:
 
       - name: Check out the Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           fetch-depth: 0
 
       - name: Set up Java toolchain
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9
         with:
           distribution: "temurin"
           java-version: "21"
@@ -47,11 +47,38 @@ jobs:
   Continuous-Deployment:
     needs: Continuous-Integration
     runs-on: ubuntu-22.04
-    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      contents: read
+      packages: write
+
     steps:
-      - name: Dummy Deploy Step
+      - name: Check out the Git repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Set up Java toolchain
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "gradle"
+
+      - name: Build JAR File
         run: |
-          echo "Starting deployment..."
-          echo "Contacting to PaaS..."
-          echo "Info: Platform as a Service is unavailable."
-          echo "[DUMMY] Application succeed to be deployed!"
+          chmod +x gradlew
+          ./gradlew clean build -x test
+
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/advprog-2026-a18-project/Manajemen-Pembayaran:latest
