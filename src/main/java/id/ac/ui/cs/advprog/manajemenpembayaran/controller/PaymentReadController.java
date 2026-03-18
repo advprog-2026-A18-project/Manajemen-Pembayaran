@@ -1,9 +1,7 @@
 package id.ac.ui.cs.advprog.manajemenpembayaran.controller;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -41,13 +39,5 @@ public class PaymentReadController {
     @GetMapping("/wallets/{ownerId}")
     public ResponseEntity<Wallet> getWallet(@PathVariable String ownerId) {
         return ResponseEntity.ok(paymentReadService.getWalletByOwnerId(ownerId));
-    }
-
-    @GetMapping("/tes")
-    public Map<String, Object> tes() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Hello World");
-        response.put("status", "success");
-        return response;
     }
 }
