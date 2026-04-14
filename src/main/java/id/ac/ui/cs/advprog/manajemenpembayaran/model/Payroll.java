@@ -31,9 +31,22 @@ public class Payroll {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal rateUsed;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PayrollStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PayrollSourceType sourceType;
+
+    @Column(nullable = false)
+    private String sourceId;
+
+    @Column(nullable = false, unique = true)
+    private String idempotencyKey;
 
     @Column(nullable = false)
     private String description;
