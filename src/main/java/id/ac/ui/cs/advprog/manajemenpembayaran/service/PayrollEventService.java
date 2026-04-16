@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 
 import id.ac.ui.cs.advprog.manajemenpembayaran.dto.PayrollCalculationResult;
+import id.ac.ui.cs.advprog.manajemenpembayaran.dto.PayrollEventProcessResult;
 import id.ac.ui.cs.advprog.manajemenpembayaran.dto.event.HarvestApprovedEvent;
 import id.ac.ui.cs.advprog.manajemenpembayaran.dto.event.ShipmentAdminApprovedEvent;
 import id.ac.ui.cs.advprog.manajemenpembayaran.dto.event.ShipmentMandorApprovedEvent;
@@ -26,21 +27,54 @@ public class PayrollEventService {
     }
 
     public Payroll processHarvestApproved(HarvestApprovedEvent event) {
+        return processHarvestApprovedWithResult(event).getPayroll();
+    }
+
+    public PayrollEventProcessResult processHarvestApprovedWithResult(HarvestApprovedEvent event) {
         String key = buildIdempotencyKey(PayrollSourceType.HARVEST_APPROVAL, event.getEventId());
         return payrollRepository.findByIdempotencyKey(key)
-                .orElseGet(() -> createPayrollForBuruh(event, key));
+                .map(existing -> PayrollEventProcessResult.builder()
+                        .payroll(existing)
+                        .created(false)
+                        .build())
+                .orElseGet(() -> PayrollEventProcessResult.builder()
+                        .payroll(createPayrollForBuruh(event, key))
+                        .created(true)
+                        .build());
     }
 
     public Payroll processShipmentMandorApproved(ShipmentMandorApprovedEvent event) {
+        return processShipmentMandorApprovedWithResult(event).getPayroll();
+    }
+
+    public PayrollEventProcessResult processShipmentMandorApprovedWithResult(ShipmentMandorApprovedEvent event) {
         String key = buildIdempotencyKey(PayrollSourceType.SHIPMENT_MANDOR_APPROVAL, event.getEventId());
         return payrollRepository.findByIdempotencyKey(key)
-                .orElseGet(() -> createPayrollForSupir(event, key));
+                .map(existing -> PayrollEventProcessResult.builder()
+                        .payroll(existing)
+                        .created(false)
+                        .build())
+                .orElseGet(() -> PayrollEventProcessResult.builder()
+                        .payroll(createPayrollForSupir(event, key))
+                        .created(true)
+                        .build());
     }
 
     public Payroll processShipmentAdminApproved(ShipmentAdminApprovedEvent event) {
+        return processShipmentAdminApprovedWithResult(event).getPayroll();
+    }
+
+    public PayrollEventProcessResult processShipmentAdminApprovedWithResult(ShipmentAdminApprovedEvent event) {
         String key = buildIdempotencyKey(PayrollSourceType.SHIPMENT_ADMIN_APPROVAL, event.getEventId());
         return payrollRepository.findByIdempotencyKey(key)
-                .orElseGet(() -> createPayrollForMandor(event, key));
+                .map(existing -> PayrollEventProcessResult.builder()
+                        .payroll(existing)
+                        .created(false)
+                        .build())
+                .orElseGet(() -> PayrollEventProcessResult.builder()
+                        .payroll(createPayrollForMandor(event, key))
+                        .created(true)
+                        .build());
     }
 
     private Payroll createPayrollForBuruh(HarvestApprovedEvent event, String key) {
