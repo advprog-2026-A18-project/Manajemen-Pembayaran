@@ -4,9 +4,11 @@ import id.ac.ui.cs.advprog.manajemenpembayaran.exception.ResourceNotFoundExcepti
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollStatus;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
+import id.ac.ui.cs.advprog.manajemenpembayaran.security.JwtUtils;
 import id.ac.ui.cs.advprog.manajemenpembayaran.service.PaymentReadService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -20,6 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PaymentReadController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class PaymentReadControllerTest {
 
     @Autowired
@@ -27,6 +30,9 @@ class PaymentReadControllerTest {
 
     @MockitoBean
     private PaymentReadService paymentReadService;
+
+    @MockitoBean
+    private JwtUtils jwtUtils;
 
     @Test
     void getPayrollsShouldReturnData() throws Exception {

@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,6 +28,7 @@ public class PaymentReadController {
     }
 
     @GetMapping("/payrolls")
+    @PreAuthorize("hasAnyAuthority('ADMIN','MANDOR','SUPIR','BURUH')")
     public ResponseEntity<List<Payroll>> getPayrolls(
             @RequestParam String ownerId,
             @RequestParam(required = false) PayrollStatus status,
@@ -37,6 +39,7 @@ public class PaymentReadController {
     }
 
     @GetMapping("/wallets/{ownerId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','MANDOR','SUPIR','BURUH')")
     public ResponseEntity<Wallet> getWallet(@PathVariable String ownerId) {
         return ResponseEntity.ok(paymentReadService.getWalletByOwnerId(ownerId));
     }
