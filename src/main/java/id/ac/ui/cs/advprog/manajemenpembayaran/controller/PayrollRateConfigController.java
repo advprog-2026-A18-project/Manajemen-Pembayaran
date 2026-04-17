@@ -5,6 +5,7 @@ import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollRateConfig;
 import id.ac.ui.cs.advprog.manajemenpembayaran.service.PayrollRateConfigService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,11 +19,13 @@ public class PayrollRateConfigController {
     }
 
     @PutMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<PayrollRateConfig> upsertRates(@Valid @RequestBody PayrollRateRequest request) {
         return ResponseEntity.ok(payrollRateConfigService.upsert(request));
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<PayrollRateConfig> getCurrentRate() {
         PayrollRateConfig currentRate = payrollRateConfigService.getCurrentRate();
         if (currentRate == null) {

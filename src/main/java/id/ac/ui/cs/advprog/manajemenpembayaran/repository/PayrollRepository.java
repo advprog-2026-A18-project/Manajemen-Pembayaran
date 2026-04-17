@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PayrollRepository extends JpaRepository<Payroll, Long> {
@@ -22,4 +23,6 @@ public interface PayrollRepository extends JpaRepository<Payroll, Long> {
             LocalDateTime start,
             LocalDateTime end
     );
+
+    Optional<Payroll> findByIdempotencyKey(String idempotencyKey);
 }
