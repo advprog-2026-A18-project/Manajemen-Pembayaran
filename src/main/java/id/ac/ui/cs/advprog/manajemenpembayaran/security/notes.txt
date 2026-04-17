@@ -1,0 +1,45 @@
+MASUKKAN DI build.gradle.kts;
+di atas dependencies tambahin,
+
+val jjwtVersion = "0.12.6"
+val dotenvVersion = "4.0.0"
+
+-----------------
+di dependencies tambahin,
+dependencies {
+
+    implementation("org.springframework.boot:spring-boot-starter-security")
+
+    implementation("me.paulschwarz:spring-dotenv:$dotenvVersion")
+
+    implementation("io.jsonwebtoken:jjwt-api:$jjwtVersion")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:$jjwtVersion")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jjwtVersion")
+}
+-------------------
+di application.properties taro ini:
+
+    jwt:
+    secret: ${JWT_SECRET}
+    expirationMs: 600000
+    refreshExpirationMs: 604800000
+-------------------
+di .env taro ini:
+    JWT_SECRET=ProyekMySawitKelompokKamiSangatKerenDanPastiDapatNilaiA123!@#
+-------------------
+
+ROLE TERSEDIA DAN TERDAFTAR:
+1. MANDOR
+2. SUPIR
+3. BURUH
+4. ADMIN
+-------------------
+cara cek rolenya nanti tinggal:
+1. tambahin annotation @PreAuthorize("hasAuthority('<ROLE>')") --> contoh: @PreAuthorize("hasAuthority('MANDOR')")
+2. letakkan di atas http controller method / class yang kalian butuhin; contoh:
+    @PostMapping("/lapor")
+    @PreAuthorize("hasAuthority('MANDOR')") 
+    public ResponseEntity<String> laporPanen(Principal principal) 
+
+
+

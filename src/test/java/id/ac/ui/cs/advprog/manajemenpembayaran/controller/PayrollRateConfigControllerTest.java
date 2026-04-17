@@ -2,9 +2,11 @@ package id.ac.ui.cs.advprog.manajemenpembayaran.controller;
 
 import id.ac.ui.cs.advprog.manajemenpembayaran.dto.PayrollRateRequest;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollRateConfig;
+import id.ac.ui.cs.advprog.manajemenpembayaran.security.JwtUtils;
 import id.ac.ui.cs.advprog.manajemenpembayaran.service.PayrollRateConfigService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -20,6 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PayrollRateConfigController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class PayrollRateConfigControllerTest {
 
     @Autowired
@@ -27,6 +30,9 @@ class PayrollRateConfigControllerTest {
 
     @MockitoBean
     private PayrollRateConfigService payrollRateConfigService;
+
+    @MockitoBean
+    private JwtUtils jwtUtils;
 
     @Test
     void upsertRatesShouldReturnOk() throws Exception {
