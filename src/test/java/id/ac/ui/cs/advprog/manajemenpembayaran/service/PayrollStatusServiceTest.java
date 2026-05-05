@@ -47,4 +47,28 @@ class PayrollStatusServiceTest {
         assertEquals(PayrollStatus.ACCEPTED, acceptedPayroll.getStatus());
         assertEquals(PayrollStatus.ACCEPTED, payrollCaptor.getValue().getStatus());
     }
+
+    @Test
+    void rejectPayrollShouldChangePendingPayrollToRejectedAndStoreReason() {
+        Payroll payroll = Payroll.builder()
+                .id(2L)
+                .ownerId("buruh-2")
+                .ownerRole("BURUH")
+                .kilogram(BigDecimal.valueOf(80))
+                .amount(BigDecimal.valueOf(144000))
+                .status(PayrollStatus.PENDING)
+                .build();
+
+        when(payrollRepository.findById(2L)).thenReturn(Optional.of(payroll));
+        when(payrollRepository.save(payroll)).thenReturn(payroll);
+
+        Payroll rejectedPayroll = payrollStatusService.rejectPayroll(2L, "Incorrect harvest data");
+
+        ArgumentCaptor<Payroll> payrollCaptor = ArgumentCaptor.forClass(Payroll.class);
+        verify(payrollRepository).save(payrollCaptor.capture());
+        assertEquals(PayrollStatus.REJECTED, rejectedPayroll.getStatus());
+        assertEquals("Incorrect harvest data", rejectedPayroll.getRejectionReason());
+        assertEquals(PayrollStatus.REJECTED, payrollCaptor.getValue().getStatus());
+        assertEquals("Incorrect harvest data", payrollCaptor.getValue().getRejectionReason());
+    }
 }
