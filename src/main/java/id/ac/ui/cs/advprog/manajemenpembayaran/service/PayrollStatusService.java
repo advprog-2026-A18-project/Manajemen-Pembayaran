@@ -32,6 +32,10 @@ public class PayrollStatusService {
     }
 
     public Payroll rejectPayroll(Long payrollId, String rejectionReason) {
+        if (rejectionReason == null || rejectionReason.isBlank()) {
+            throw new IllegalArgumentException("rejectionReason is required");
+        }
+
         Payroll payroll = payrollRepository.findById(payrollId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payroll not found for id=" + payrollId));
 
