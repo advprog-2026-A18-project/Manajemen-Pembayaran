@@ -22,4 +22,13 @@ public class PayrollStatusService {
         payroll.setStatus(PayrollStatus.ACCEPTED);
         return payrollRepository.save(payroll);
     }
+
+    public Payroll rejectPayroll(Long payrollId, String rejectionReason) {
+        Payroll payroll = payrollRepository.findById(payrollId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payroll not found for id=" + payrollId));
+
+        payroll.setStatus(PayrollStatus.REJECTED);
+        payroll.setRejectionReason(rejectionReason);
+        return payrollRepository.save(payroll);
+    }
 }
