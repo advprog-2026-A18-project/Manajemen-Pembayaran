@@ -36,4 +36,10 @@ public class PayrollStatusController {
     ) {
         return ResponseEntity.ok(payrollStatusService.rejectPayroll(payrollId, request.get("rejectionReason")));
     }
+
+    @PostMapping("/{payrollId}/pay")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Payroll> payPayroll(@PathVariable Long payrollId) {
+        return ResponseEntity.ok(payrollStatusService.payPayroll(payrollId));
+    }
 }
