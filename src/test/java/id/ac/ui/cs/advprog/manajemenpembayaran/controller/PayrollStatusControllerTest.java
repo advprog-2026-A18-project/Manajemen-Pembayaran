@@ -77,4 +77,22 @@ class PayrollStatusControllerTest {
                 .andExpect(jsonPath("$.status").value("REJECTED"))
                 .andExpect(jsonPath("$.rejectionReason").value("Incorrect harvest data"));
     }
+
+    @Test
+    void payPayrollShouldReturnPaidPayroll() throws Exception {
+        Payroll payroll = Payroll.builder()
+                .id(3L)
+                .ownerId("buruh-3")
+                .ownerRole("BURUH")
+                .amount(BigDecimal.valueOf(108000))
+                .status(PayrollStatus.PAID)
+                .build();
+
+        when(payrollStatusService.payPayroll(3L)).thenReturn(payroll);
+
+        mockMvc.perform(post("/api/pembayaran/admin/payrolls/3/pay"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(3))
+                .andExpect(jsonPath("$.status").value("PAID"));
+    }
 }
