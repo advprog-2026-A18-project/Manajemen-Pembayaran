@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -47,5 +48,33 @@ class PayrollStatusControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.status").value("ACCEPTED"));
+    }
+
+    @Test
+    void rejectPayrollShouldReturnRejectedPayroll() throws Exception {
+        Payroll payroll = Payroll.builder()
+                .id(2L)
+                .ownerId("buruh-2")
+                .ownerRole("BURUH")
+                .amount(BigDecimal.valueOf(144000))
+                .status(PayrollStatus.REJECTED)
+                .rejectionReason("Incorrect harvest data")
+                .build();
+
+        when(payrollStatusService.rejectPayroll(2L, "Incorrect harvest data")).thenReturn(payroll);
+
+        String payload = """
+                {
+                  "rejectionReason": "Incorrect harvest data"
+                }
+                """;
+
+        mockMvc.perform(post("/api/pembayaran/admin/payrolls/2/reject")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(2))
+                .andExpect(jsonPath("$.status").value("REJECTED"))
+                .andExpect(jsonPath("$.rejectionReason").value("Incorrect harvest data"));
     }
 }
