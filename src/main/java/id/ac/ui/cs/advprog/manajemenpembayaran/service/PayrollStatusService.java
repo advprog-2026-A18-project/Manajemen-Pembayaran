@@ -28,6 +28,10 @@ public class PayrollStatusService {
         Wallet workerWallet = findWallet(payroll.getOwnerId());
         Wallet adminWallet = findWallet(ADMIN_WALLET_OWNER_ID);
 
+        if (adminWallet.getBalance().compareTo(payroll.getAmount()) < 0) {
+            throw new IllegalStateException("Admin wallet balance is insufficient");
+        }
+
         workerWallet.setBalance(workerWallet.getBalance().add(payroll.getAmount()));
         adminWallet.setBalance(adminWallet.getBalance().subtract(payroll.getAmount()));
         walletRepository.save(workerWallet);
