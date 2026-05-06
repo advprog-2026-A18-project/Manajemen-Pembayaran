@@ -95,4 +95,14 @@ class PayrollStatusControllerTest {
                 .andExpect(jsonPath("$.id").value(3))
                 .andExpect(jsonPath("$.status").value("PAID"));
     }
+
+    @Test
+    void invalidStatusTransitionShouldReturnBadRequest() throws Exception {
+        when(payrollStatusService.payPayroll(4L))
+                .thenThrow(new IllegalStateException("Only ACCEPTED payroll can be paid"));
+
+        mockMvc.perform(post("/api/pembayaran/admin/payrolls/4/pay"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Only ACCEPTED payroll can be paid"));
+    }
 }
