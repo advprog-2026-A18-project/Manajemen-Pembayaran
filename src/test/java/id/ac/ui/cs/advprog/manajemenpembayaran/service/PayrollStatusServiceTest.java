@@ -152,4 +152,16 @@ class PayrollStatusServiceTest {
         verify(walletRepository).save(wallet);
         verify(payrollRepository).save(payroll);
     }
+
+    @Test
+    void rejectPayrollShouldRejectBlankReason() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> payrollStatusService.rejectPayroll(6L, " ")
+        );
+
+        assertEquals("rejectionReason is required", exception.getMessage());
+        verify(payrollRepository, never()).findById(6L);
+        verify(payrollRepository, never()).save(org.mockito.ArgumentMatchers.any(Payroll.class));
+    }
 }
