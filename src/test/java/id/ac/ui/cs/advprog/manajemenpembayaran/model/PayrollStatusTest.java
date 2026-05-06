@@ -10,7 +10,12 @@ class PayrollStatusTest {
     @Test
     void enumValuesShouldMatchExpectedOrder() {
         assertArrayEquals(
-                new PayrollStatus[]{PayrollStatus.PENDING, PayrollStatus.ACCEPTED, PayrollStatus.REJECTED},
+                new PayrollStatus[]{
+                        PayrollStatus.PENDING,
+                        PayrollStatus.ACCEPTED,
+                        PayrollStatus.REJECTED,
+                        PayrollStatus.PAID
+                },
                 PayrollStatus.values()
         );
     }
@@ -20,5 +25,6 @@ class PayrollStatusTest {
         assertEquals(PayrollStatus.PENDING, PayrollStatus.valueOf("PENDING"));
         assertEquals(PayrollStatus.ACCEPTED, PayrollStatus.valueOf("ACCEPTED"));
         assertEquals(PayrollStatus.REJECTED, PayrollStatus.valueOf("REJECTED"));
+        assertEquals(PayrollStatus.PAID, PayrollStatus.valueOf("PAID"));
     }
 }
