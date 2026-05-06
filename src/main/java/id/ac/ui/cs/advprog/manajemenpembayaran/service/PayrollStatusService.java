@@ -19,6 +19,10 @@ public class PayrollStatusService {
         Payroll payroll = payrollRepository.findById(payrollId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payroll not found for id=" + payrollId));
 
+        if (payroll.getStatus() != PayrollStatus.PENDING) {
+            throw new IllegalStateException("Only PENDING payroll can be accepted");
+        }
+
         payroll.setStatus(PayrollStatus.ACCEPTED);
         return payrollRepository.save(payroll);
     }
