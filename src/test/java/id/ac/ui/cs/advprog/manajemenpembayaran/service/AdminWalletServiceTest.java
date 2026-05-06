@@ -12,6 +12,8 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,5 +41,16 @@ class AdminWalletServiceTest {
 
         assertEquals(BigDecimal.valueOf(350000), updatedWallet.getBalance());
         verify(walletRepository).save(adminWallet);
+    }
+
+    @Test
+    void topUpAdminWalletShouldRejectNonPositiveAmount() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> adminWalletService.topUpAdminWallet(BigDecimal.ZERO)
+        );
+
+        assertEquals("topUpAmount must be greater than 0", exception.getMessage());
+        verify(walletRepository, never()).findByOwnerId("admin-default");
     }
 }
