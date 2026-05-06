@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class PayrollStatusService {
 
+    private static final String ADMIN_WALLET_OWNER_ID = "admin-default";
+
     private final PayrollRepository payrollRepository;
     private final WalletRepository walletRepository;
 
@@ -22,6 +24,18 @@ public class PayrollStatusService {
     public Payroll acceptPayroll(Long payrollId) {
         Payroll payroll = findPayroll(payrollId);
         ensureStatus(payroll, PayrollStatus.PENDING, "Only PENDING payroll can be accepted");
+
+        Wallet workerWallet = findWallet(payroll.getOwnerId());
+        Wallet adminWallet = findWallet(ADMIN_WALLET_OWNER_ID);
+
+        if (adminWallet.getBalance().compareTo(payroll.getAmount()) < 0) {
+            throw new IllegalStateException("Admin wallet balance is insufficient");
+        }
+
+        workerWallet.setBalance(workerWallet.getBalance().add(payroll.getAmount()));
+        adminWallet.setBalance(adminWallet.getBalance().subtract(payroll.getAmount()));
+        walletRepository.save(workerWallet);
+        walletRepository.save(adminWallet);
 
         payroll.setStatus(PayrollStatus.ACCEPTED);
         return payrollRepository.save(payroll);
@@ -57,6 +71,11 @@ public class PayrollStatusService {
     private Payroll findPayroll(Long payrollId) {
         return payrollRepository.findById(payrollId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payroll not found for id=" + payrollId));
+    }
+
+    private Wallet findWallet(String ownerId) {
+        return walletRepository.findByOwnerId(ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for ownerId=" + ownerId));
     }
 
     private void ensureStatus(Payroll payroll, PayrollStatus expectedStatus, String message) {
