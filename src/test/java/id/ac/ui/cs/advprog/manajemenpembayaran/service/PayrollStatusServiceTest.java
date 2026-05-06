@@ -164,4 +164,39 @@ class PayrollStatusServiceTest {
         verify(payrollRepository, never()).findById(6L);
         verify(payrollRepository, never()).save(org.mockito.ArgumentMatchers.any(Payroll.class));
     }
+
+    @Test
+    void acceptPayrollShouldTransferAmountFromAdminWalletToWorkerWallet() {
+        Payroll payroll = Payroll.builder()
+                .id(7L)
+                .ownerId("buruh-7")
+                .ownerRole("BURUH")
+                .kilogram(BigDecimal.valueOf(100))
+                .amount(BigDecimal.valueOf(180000))
+                .status(PayrollStatus.PENDING)
+                .build();
+        Wallet workerWallet = Wallet.builder()
+                .ownerId("buruh-7")
+                .ownerRole("BURUH")
+                .balance(BigDecimal.valueOf(20000))
+                .build();
+        Wallet adminWallet = Wallet.builder()
+                .ownerId("admin-default")
+                .ownerRole("ADMIN")
+                .balance(BigDecimal.valueOf(500000))
+                .build();
+
+        when(payrollRepository.findById(7L)).thenReturn(Optional.of(payroll));
+        when(walletRepository.findByOwnerId("buruh-7")).thenReturn(Optional.of(workerWallet));
+        when(walletRepository.findByOwnerId("admin-default")).thenReturn(Optional.of(adminWallet));
+        when(payrollRepository.save(payroll)).thenReturn(payroll);
+
+        Payroll acceptedPayroll = payrollStatusService.acceptPayroll(7L);
+
+        assertEquals(PayrollStatus.ACCEPTED, acceptedPayroll.getStatus());
+        assertEquals(BigDecimal.valueOf(200000), workerWallet.getBalance());
+        assertEquals(BigDecimal.valueOf(320000), adminWallet.getBalance());
+        verify(walletRepository).save(workerWallet);
+        verify(walletRepository).save(adminWallet);
+    }
 }
