@@ -211,4 +211,42 @@ class PayrollStatusServiceTest {
         verify(walletRepository).save(workerWallet);
         verify(walletRepository).save(adminWallet);
     }
+
+    @Test
+    void acceptPayrollShouldRejectWhenAdminWalletBalanceIsInsufficient() {
+        Payroll payroll = Payroll.builder()
+                .id(8L)
+                .ownerId("buruh-8")
+                .ownerRole("BURUH")
+                .kilogram(BigDecimal.valueOf(100))
+                .amount(BigDecimal.valueOf(180000))
+                .status(PayrollStatus.PENDING)
+                .build();
+        Wallet workerWallet = Wallet.builder()
+                .ownerId("buruh-8")
+                .ownerRole("BURUH")
+                .balance(BigDecimal.ZERO)
+                .build();
+        Wallet adminWallet = Wallet.builder()
+                .ownerId("admin-default")
+                .ownerRole("ADMIN")
+                .balance(BigDecimal.valueOf(100000))
+                .build();
+
+        when(payrollRepository.findById(8L)).thenReturn(Optional.of(payroll));
+        when(walletRepository.findByOwnerId("buruh-8")).thenReturn(Optional.of(workerWallet));
+        when(walletRepository.findByOwnerId("admin-default")).thenReturn(Optional.of(adminWallet));
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> payrollStatusService.acceptPayroll(8L)
+        );
+
+        assertEquals("Admin wallet balance is insufficient", exception.getMessage());
+        assertEquals(BigDecimal.ZERO, workerWallet.getBalance());
+        assertEquals(BigDecimal.valueOf(100000), adminWallet.getBalance());
+        verify(walletRepository, never()).save(workerWallet);
+        verify(walletRepository, never()).save(adminWallet);
+        verify(payrollRepository, never()).save(payroll);
+    }
 }
