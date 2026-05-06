@@ -43,8 +43,20 @@ class PayrollStatusServiceTest {
                 .amount(BigDecimal.valueOf(180000))
                 .status(PayrollStatus.PENDING)
                 .build();
+        Wallet workerWallet = Wallet.builder()
+                .ownerId("buruh-1")
+                .ownerRole("BURUH")
+                .balance(BigDecimal.ZERO)
+                .build();
+        Wallet adminWallet = Wallet.builder()
+                .ownerId("admin-default")
+                .ownerRole("ADMIN")
+                .balance(BigDecimal.valueOf(500000))
+                .build();
 
         when(payrollRepository.findById(1L)).thenReturn(Optional.of(payroll));
+        when(walletRepository.findByOwnerId("buruh-1")).thenReturn(Optional.of(workerWallet));
+        when(walletRepository.findByOwnerId("admin-default")).thenReturn(Optional.of(adminWallet));
         when(payrollRepository.save(payroll)).thenReturn(payroll);
 
         Payroll acceptedPayroll = payrollStatusService.acceptPayroll(1L);
