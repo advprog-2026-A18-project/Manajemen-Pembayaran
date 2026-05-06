@@ -49,6 +49,15 @@ class PaymentReadAuthorizationTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void getPayrollsShouldRejectDifferentOwner() throws Exception {
+        authenticate("buruh-1", "BURUH");
+
+        mockMvc.perform(get("/api/pembayaran/payrolls")
+                        .param("ownerId", "buruh-2"))
+                .andExpect(status().isForbidden());
+    }
+
     private void authenticate(String ownerId, String role) {
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(
