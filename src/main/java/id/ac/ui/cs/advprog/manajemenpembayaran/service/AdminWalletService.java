@@ -19,6 +19,10 @@ public class AdminWalletService {
     }
 
     public Wallet topUpAdminWallet(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("topUpAmount must be greater than 0");
+        }
+
         Wallet adminWallet = walletRepository.findByOwnerId(ADMIN_WALLET_OWNER_ID)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for ownerId=" + ADMIN_WALLET_OWNER_ID));
 
