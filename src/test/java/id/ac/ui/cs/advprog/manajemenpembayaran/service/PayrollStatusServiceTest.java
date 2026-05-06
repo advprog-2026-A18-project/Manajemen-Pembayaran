@@ -95,4 +95,26 @@ class PayrollStatusServiceTest {
         assertEquals("Only PENDING payroll can be accepted", exception.getMessage());
         verify(payrollRepository, never()).save(payroll);
     }
+
+    @Test
+    void rejectPayrollShouldRejectNonPendingPayroll() {
+        Payroll payroll = Payroll.builder()
+                .id(4L)
+                .ownerId("buruh-4")
+                .ownerRole("BURUH")
+                .kilogram(BigDecimal.valueOf(75))
+                .amount(BigDecimal.valueOf(135000))
+                .status(PayrollStatus.ACCEPTED)
+                .build();
+
+        when(payrollRepository.findById(4L)).thenReturn(Optional.of(payroll));
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> payrollStatusService.rejectPayroll(4L, "Incorrect harvest data")
+        );
+
+        assertEquals("Only PENDING payroll can be rejected", exception.getMessage());
+        verify(payrollRepository, never()).save(payroll);
+    }
 }
