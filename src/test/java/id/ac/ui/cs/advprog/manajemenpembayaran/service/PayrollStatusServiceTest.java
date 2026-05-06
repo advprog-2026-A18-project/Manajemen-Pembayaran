@@ -14,6 +14,8 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -70,5 +72,27 @@ class PayrollStatusServiceTest {
         assertEquals("Incorrect harvest data", rejectedPayroll.getRejectionReason());
         assertEquals(PayrollStatus.REJECTED, payrollCaptor.getValue().getStatus());
         assertEquals("Incorrect harvest data", payrollCaptor.getValue().getRejectionReason());
+    }
+
+    @Test
+    void acceptPayrollShouldRejectNonPendingPayroll() {
+        Payroll payroll = Payroll.builder()
+                .id(3L)
+                .ownerId("buruh-3")
+                .ownerRole("BURUH")
+                .kilogram(BigDecimal.valueOf(60))
+                .amount(BigDecimal.valueOf(108000))
+                .status(PayrollStatus.REJECTED)
+                .build();
+
+        when(payrollRepository.findById(3L)).thenReturn(Optional.of(payroll));
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> payrollStatusService.acceptPayroll(3L)
+        );
+
+        assertEquals("Only PENDING payroll can be accepted", exception.getMessage());
+        verify(payrollRepository, never()).save(payroll);
     }
 }
