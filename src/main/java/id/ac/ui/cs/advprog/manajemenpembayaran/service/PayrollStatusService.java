@@ -20,12 +20,8 @@ public class PayrollStatusService {
     }
 
     public Payroll acceptPayroll(Long payrollId) {
-        Payroll payroll = payrollRepository.findById(payrollId)
-                .orElseThrow(() -> new ResourceNotFoundException("Payroll not found for id=" + payrollId));
-
-        if (payroll.getStatus() != PayrollStatus.PENDING) {
-            throw new IllegalStateException("Only PENDING payroll can be accepted");
-        }
+        Payroll payroll = findPayroll(payrollId);
+        ensureStatus(payroll, PayrollStatus.PENDING, "Only PENDING payroll can be accepted");
 
         payroll.setStatus(PayrollStatus.ACCEPTED);
         return payrollRepository.save(payroll);
@@ -36,12 +32,8 @@ public class PayrollStatusService {
             throw new IllegalArgumentException("rejectionReason is required");
         }
 
-        Payroll payroll = payrollRepository.findById(payrollId)
-                .orElseThrow(() -> new ResourceNotFoundException("Payroll not found for id=" + payrollId));
-
-        if (payroll.getStatus() != PayrollStatus.PENDING) {
-            throw new IllegalStateException("Only PENDING payroll can be rejected");
-        }
+        Payroll payroll = findPayroll(payrollId);
+        ensureStatus(payroll, PayrollStatus.PENDING, "Only PENDING payroll can be rejected");
 
         payroll.setStatus(PayrollStatus.REJECTED);
         payroll.setRejectionReason(rejectionReason);
@@ -49,12 +41,8 @@ public class PayrollStatusService {
     }
 
     public Payroll payPayroll(Long payrollId) {
-        Payroll payroll = payrollRepository.findById(payrollId)
-                .orElseThrow(() -> new ResourceNotFoundException("Payroll not found for id=" + payrollId));
-
-        if (payroll.getStatus() != PayrollStatus.ACCEPTED) {
-            throw new IllegalStateException("Only ACCEPTED payroll can be paid");
-        }
+        Payroll payroll = findPayroll(payrollId);
+        ensureStatus(payroll, PayrollStatus.ACCEPTED, "Only ACCEPTED payroll can be paid");
 
         Wallet wallet = walletRepository.findByOwnerId(payroll.getOwnerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for ownerId=" + payroll.getOwnerId()));
@@ -64,5 +52,16 @@ public class PayrollStatusService {
 
         payroll.setStatus(PayrollStatus.PAID);
         return payrollRepository.save(payroll);
+    }
+
+    private Payroll findPayroll(Long payrollId) {
+        return payrollRepository.findById(payrollId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payroll not found for id=" + payrollId));
+    }
+
+    private void ensureStatus(Payroll payroll, PayrollStatus expectedStatus, String message) {
+        if (payroll.getStatus() != expectedStatus) {
+            throw new IllegalStateException(message);
+        }
     }
 }
