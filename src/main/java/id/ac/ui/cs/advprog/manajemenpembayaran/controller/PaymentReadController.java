@@ -28,7 +28,7 @@ public class PaymentReadController {
     }
 
     @GetMapping("/payrolls")
-    @PreAuthorize("hasAnyAuthority('ADMIN','MANDOR','SUPIR','BURUH')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','MANDOR','SUPIR','BURUH') && @paymentAuthorizationService.canAccessOwner(#ownerId)")
     public ResponseEntity<List<Payroll>> getPayrolls(
             @RequestParam String ownerId,
             @RequestParam(required = false) PayrollStatus status,
@@ -39,7 +39,7 @@ public class PaymentReadController {
     }
 
     @GetMapping("/wallets/{ownerId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN','MANDOR','SUPIR','BURUH')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','MANDOR','SUPIR','BURUH') && @paymentAuthorizationService.canAccessOwner(#ownerId)")
     public ResponseEntity<Wallet> getWallet(@PathVariable String ownerId) {
         return ResponseEntity.ok(paymentReadService.getWalletByOwnerId(ownerId));
     }
