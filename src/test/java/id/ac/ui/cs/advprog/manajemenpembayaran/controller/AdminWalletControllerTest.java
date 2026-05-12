@@ -13,8 +13,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -76,5 +78,25 @@ class AdminWalletControllerTest {
                 .andExpect(jsonPath("$.ownerId").value("admin-default"))
                 .andExpect(jsonPath("$.amount").value(250000))
                 .andExpect(jsonPath("$.status").value("COMPLETED"));
+    }
+
+    @Test
+    void getTopUpRequestsShouldReturnRequestsFilteredByStatus() throws Exception {
+        TopUpRequest request = TopUpRequest.builder()
+                .id(3L)
+                .ownerId("admin-default")
+                .amount(BigDecimal.valueOf(100000))
+                .status(TopUpStatus.PENDING)
+                .build();
+
+        when(adminWalletService.getTopUpRequests(TopUpStatus.PENDING)).thenReturn(List.of(request));
+
+        mockMvc.perform(get("/api/pembayaran/admin/wallet/top-up")
+                        .param("status", "PENDING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(3))
+                .andExpect(jsonPath("$[0].ownerId").value("admin-default"))
+                .andExpect(jsonPath("$[0].amount").value(100000))
+                .andExpect(jsonPath("$[0].status").value("PENDING"));
     }
 }
