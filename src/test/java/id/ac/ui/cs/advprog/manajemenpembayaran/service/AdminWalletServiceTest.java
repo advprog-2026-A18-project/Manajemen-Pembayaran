@@ -78,4 +78,31 @@ class AdminWalletServiceTest {
         assertEquals(TopUpStatus.PENDING, result.getStatus());
         verify(walletRepository, never()).findByOwnerId("admin-default");
     }
+
+    @Test
+    void confirmTopUpRequestShouldCompleteRequestAndIncreaseAdminWalletBalance() {
+        TopUpRequest request = TopUpRequest.builder()
+                .id(2L)
+                .ownerId("admin-default")
+                .amount(BigDecimal.valueOf(250000))
+                .status(TopUpStatus.PENDING)
+                .build();
+        Wallet adminWallet = Wallet.builder()
+                .ownerId("admin-default")
+                .ownerRole("ADMIN")
+                .balance(BigDecimal.valueOf(100000))
+                .build();
+
+        when(topUpRequestRepository.findById(2L)).thenReturn(Optional.of(request));
+        when(walletRepository.findByOwnerId("admin-default")).thenReturn(Optional.of(adminWallet));
+        when(walletRepository.save(adminWallet)).thenReturn(adminWallet);
+        when(topUpRequestRepository.save(request)).thenReturn(request);
+
+        TopUpRequest confirmedRequest = adminWalletService.confirmTopUpRequest(2L);
+
+        assertEquals(TopUpStatus.COMPLETED, confirmedRequest.getStatus());
+        assertEquals(BigDecimal.valueOf(350000), adminWallet.getBalance());
+        verify(walletRepository).save(adminWallet);
+        verify(topUpRequestRepository).save(request);
+    }
 }
