@@ -1,6 +1,9 @@
 package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpRequest;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpStatus;
+import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TopUpRequestRepository;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +25,9 @@ class AdminWalletServiceTest {
 
     @Mock
     private WalletRepository walletRepository;
+
+    @Mock
+    private TopUpRequestRepository topUpRequestRepository;
 
     @InjectMocks
     private AdminWalletService adminWalletService;
@@ -51,6 +57,25 @@ class AdminWalletServiceTest {
         );
 
         assertEquals("topUpAmount must be greater than 0", exception.getMessage());
+        verify(walletRepository, never()).findByOwnerId("admin-default");
+    }
+
+    @Test
+    void createTopUpRequestShouldCreatePendingRequestWithoutChangingWalletBalance() {
+        TopUpRequest savedRequest = TopUpRequest.builder()
+                .id(1L)
+                .ownerId("admin-default")
+                .amount(BigDecimal.valueOf(250000))
+                .status(TopUpStatus.PENDING)
+                .build();
+
+        when(topUpRequestRepository.save(org.mockito.ArgumentMatchers.any(TopUpRequest.class))).thenReturn(savedRequest);
+
+        TopUpRequest result = adminWalletService.createTopUpRequest(BigDecimal.valueOf(250000));
+
+        assertEquals("admin-default", result.getOwnerId());
+        assertEquals(BigDecimal.valueOf(250000), result.getAmount());
+        assertEquals(TopUpStatus.PENDING, result.getStatus());
         verify(walletRepository, never()).findByOwnerId("admin-default");
     }
 }
