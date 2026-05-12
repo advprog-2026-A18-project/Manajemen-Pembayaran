@@ -53,6 +53,11 @@ public class AdminWalletService {
     public TopUpRequest confirmTopUpRequest(Long topUpRequestId) {
         TopUpRequest request = topUpRequestRepository.findById(topUpRequestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Top-up request not found for id=" + topUpRequestId));
+
+        if (request.getStatus() != TopUpStatus.PENDING) {
+            throw new IllegalStateException("Only PENDING top-up request can be confirmed");
+        }
+
         Wallet adminWallet = walletRepository.findByOwnerId(ADMIN_WALLET_OWNER_ID)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for ownerId=" + ADMIN_WALLET_OWNER_ID));
 
