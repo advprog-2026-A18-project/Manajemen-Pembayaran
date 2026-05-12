@@ -58,4 +58,23 @@ class AdminWalletControllerTest {
                 .andExpect(jsonPath("$.amount").value(250000))
                 .andExpect(jsonPath("$.status").value("PENDING"));
     }
+
+    @Test
+    void confirmTopUpRequestShouldReturnCompletedTopUpRequest() throws Exception {
+        TopUpRequest request = TopUpRequest.builder()
+                .id(2L)
+                .ownerId("admin-default")
+                .amount(BigDecimal.valueOf(250000))
+                .status(TopUpStatus.COMPLETED)
+                .build();
+
+        when(adminWalletService.confirmTopUpRequest(2L)).thenReturn(request);
+
+        mockMvc.perform(post("/api/pembayaran/admin/wallet/top-up/2/confirm"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(2))
+                .andExpect(jsonPath("$.ownerId").value("admin-default"))
+                .andExpect(jsonPath("$.amount").value(250000))
+                .andExpect(jsonPath("$.status").value("COMPLETED"));
+    }
 }
