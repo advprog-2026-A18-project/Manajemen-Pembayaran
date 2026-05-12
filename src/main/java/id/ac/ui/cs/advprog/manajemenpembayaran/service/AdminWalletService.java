@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class AdminWalletService {
@@ -67,5 +68,12 @@ public class AdminWalletService {
         request.setStatus(TopUpStatus.COMPLETED);
         request.setCompletedAt(LocalDateTime.now());
         return topUpRequestRepository.save(request);
+    }
+
+    public List<TopUpRequest> getTopUpRequests(TopUpStatus status) {
+        if (status == null) {
+            return topUpRequestRepository.findAll();
+        }
+        return topUpRequestRepository.findByStatus(status);
     }
 }
