@@ -105,4 +105,25 @@ class AdminWalletServiceTest {
         verify(walletRepository).save(adminWallet);
         verify(topUpRequestRepository).save(request);
     }
+
+    @Test
+    void confirmTopUpRequestShouldRejectCompletedRequest() {
+        TopUpRequest request = TopUpRequest.builder()
+                .id(3L)
+                .ownerId("admin-default")
+                .amount(BigDecimal.valueOf(250000))
+                .status(TopUpStatus.COMPLETED)
+                .build();
+
+        when(topUpRequestRepository.findById(3L)).thenReturn(Optional.of(request));
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> adminWalletService.confirmTopUpRequest(3L)
+        );
+
+        assertEquals("Only PENDING top-up request can be confirmed", exception.getMessage());
+        verify(walletRepository, never()).findByOwnerId("admin-default");
+        verify(topUpRequestRepository, never()).save(request);
+    }
 }
