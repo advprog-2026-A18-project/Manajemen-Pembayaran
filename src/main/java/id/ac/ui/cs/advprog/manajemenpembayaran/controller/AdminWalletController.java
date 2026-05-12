@@ -4,6 +4,7 @@ import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpRequest;
 import id.ac.ui.cs.advprog.manajemenpembayaran.service.AdminWalletService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,5 +27,11 @@ public class AdminWalletController {
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<TopUpRequest> topUpAdminWallet(@RequestBody Map<String, BigDecimal> request) {
         return ResponseEntity.ok(adminWalletService.createTopUpRequest(request.get("amount")));
+    }
+
+    @PostMapping("/top-up/{topUpRequestId}/confirm")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<TopUpRequest> confirmTopUpRequest(@PathVariable Long topUpRequestId) {
+        return ResponseEntity.ok(adminWalletService.confirmTopUpRequest(topUpRequestId));
     }
 }
