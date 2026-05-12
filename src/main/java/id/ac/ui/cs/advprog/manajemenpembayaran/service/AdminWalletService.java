@@ -9,6 +9,7 @@ import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Service
 public class AdminWalletService {
@@ -46,6 +47,20 @@ public class AdminWalletService {
                 .status(TopUpStatus.PENDING)
                 .build();
 
+        return topUpRequestRepository.save(request);
+    }
+
+    public TopUpRequest confirmTopUpRequest(Long topUpRequestId) {
+        TopUpRequest request = topUpRequestRepository.findById(topUpRequestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Top-up request not found for id=" + topUpRequestId));
+        Wallet adminWallet = walletRepository.findByOwnerId(ADMIN_WALLET_OWNER_ID)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for ownerId=" + ADMIN_WALLET_OWNER_ID));
+
+        adminWallet.setBalance(adminWallet.getBalance().add(request.getAmount()));
+        walletRepository.save(adminWallet);
+
+        request.setStatus(TopUpStatus.COMPLETED);
+        request.setCompletedAt(LocalDateTime.now());
         return topUpRequestRepository.save(request);
     }
 }
