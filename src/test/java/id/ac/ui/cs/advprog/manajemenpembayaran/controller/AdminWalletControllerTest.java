@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.manajemenpembayaran.controller;
 
-import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpRequest;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpStatus;
 import id.ac.ui.cs.advprog.manajemenpembayaran.security.JwtUtils;
 import id.ac.ui.cs.advprog.manajemenpembayaran.service.AdminWalletService;
 import org.junit.jupiter.api.Test;
@@ -32,14 +33,15 @@ class AdminWalletControllerTest {
     private JwtUtils jwtUtils;
 
     @Test
-    void topUpAdminWalletShouldReturnUpdatedWallet() throws Exception {
-        Wallet wallet = Wallet.builder()
+    void topUpAdminWalletShouldReturnPendingTopUpRequest() throws Exception {
+        TopUpRequest request = TopUpRequest.builder()
+                .id(1L)
                 .ownerId("admin-default")
-                .ownerRole("ADMIN")
-                .balance(BigDecimal.valueOf(350000))
+                .amount(BigDecimal.valueOf(250000))
+                .status(TopUpStatus.PENDING)
                 .build();
 
-        when(adminWalletService.topUpAdminWallet(BigDecimal.valueOf(250000))).thenReturn(wallet);
+        when(adminWalletService.createTopUpRequest(BigDecimal.valueOf(250000))).thenReturn(request);
 
         String payload = """
                 {
@@ -51,7 +53,9 @@ class AdminWalletControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.ownerId").value("admin-default"))
-                .andExpect(jsonPath("$.balance").value(350000));
+                .andExpect(jsonPath("$.amount").value(250000))
+                .andExpect(jsonPath("$.status").value("PENDING"));
     }
 }
