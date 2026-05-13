@@ -1,9 +1,12 @@
 package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 
 import id.ac.ui.cs.advprog.manajemenpembayaran.exception.ResourceNotFoundException;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionHistory;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionType;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpRequest;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpStatus;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
+import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TransactionHistoryRepository;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TopUpRequestRepository;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.springframework.stereotype.Service;
@@ -21,10 +24,13 @@ public class AdminWalletService {
 
     private final WalletRepository walletRepository;
     private final TopUpRequestRepository topUpRequestRepository;
+    private final TransactionHistoryRepository transactionHistoryRepository;
 
-    public AdminWalletService(WalletRepository walletRepository, TopUpRequestRepository topUpRequestRepository) {
+    public AdminWalletService(WalletRepository walletRepository, TopUpRequestRepository topUpRequestRepository,
+                              TransactionHistoryRepository transactionHistoryRepository) {
         this.walletRepository = walletRepository;
         this.topUpRequestRepository = topUpRequestRepository;
+        this.transactionHistoryRepository = transactionHistoryRepository;
     }
 
     public Wallet topUpAdminWallet(BigDecimal amount) {
@@ -70,7 +76,17 @@ public class AdminWalletService {
 
         request.setStatus(TopUpStatus.COMPLETED);
         request.setCompletedAt(LocalDateTime.now());
-        return topUpRequestRepository.save(request);
+        TopUpRequest completedRequest = topUpRequestRepository.save(request);
+
+        transactionHistoryRepository.save(TransactionHistory.builder()
+                .ownerId(request.getOwnerId())
+                .type(TransactionType.TOP_UP)
+                .amount(request.getAmount())
+                .referenceType("TOP_UP_REQUEST")
+                .referenceId(String.valueOf(request.getId()))
+                .build());
+
+        return completedRequest;
     }
 
     public List<TopUpRequest> getTopUpRequests(TopUpStatus status) {
