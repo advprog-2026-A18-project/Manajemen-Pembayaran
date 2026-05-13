@@ -12,15 +12,18 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.springframework.transaction.annotation.Transactional;
 
 @ExtendWith(MockitoExtension.class)
 class AdminWalletServiceTest {
@@ -151,5 +154,12 @@ class AdminWalletServiceTest {
         List<TopUpRequest> requests = adminWalletService.getTopUpRequests(null);
 
         assertEquals(List.of(newerRequest, olderRequest), requests);
+    }
+
+    @Test
+    void confirmTopUpRequestShouldRunInTransaction() throws NoSuchMethodException {
+        Method confirmMethod = AdminWalletService.class.getMethod("confirmTopUpRequest", Long.class);
+
+        assertTrue(confirmMethod.isAnnotationPresent(Transactional.class));
     }
 }
