@@ -1,12 +1,16 @@
 package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionHistory;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionType;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpRequest;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpStatus;
+import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TransactionHistoryRepository;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TopUpRequestRepository;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,6 +37,9 @@ class AdminWalletServiceTest {
 
     @Mock
     private TopUpRequestRepository topUpRequestRepository;
+
+    @Mock
+    private TransactionHistoryRepository transactionHistoryRepository;
 
     @InjectMocks
     private AdminWalletService adminWalletService;
@@ -109,6 +116,38 @@ class AdminWalletServiceTest {
         assertEquals(BigDecimal.valueOf(350000), adminWallet.getBalance());
         verify(walletRepository).save(adminWallet);
         verify(topUpRequestRepository).save(request);
+    }
+
+    @Test
+    void confirmTopUpRequestShouldRecordTransactionHistory() {
+        TopUpRequest request = TopUpRequest.builder()
+                .id(6L)
+                .ownerId("admin-default")
+                .amount(BigDecimal.valueOf(250000))
+                .status(TopUpStatus.PENDING)
+                .build();
+        Wallet adminWallet = Wallet.builder()
+                .ownerId("admin-default")
+                .ownerRole("ADMIN")
+                .balance(BigDecimal.valueOf(100000))
+                .build();
+
+        when(topUpRequestRepository.findById(6L)).thenReturn(Optional.of(request));
+        when(walletRepository.findByOwnerId("admin-default")).thenReturn(Optional.of(adminWallet));
+        when(walletRepository.save(adminWallet)).thenReturn(adminWallet);
+        when(topUpRequestRepository.save(request)).thenReturn(request);
+
+        adminWalletService.confirmTopUpRequest(6L);
+
+        ArgumentCaptor<TransactionHistory> transactionCaptor = ArgumentCaptor.forClass(TransactionHistory.class);
+        verify(transactionHistoryRepository).save(transactionCaptor.capture());
+        TransactionHistory transaction = transactionCaptor.getValue();
+
+        assertEquals("admin-default", transaction.getOwnerId());
+        assertEquals(TransactionType.TOP_UP, transaction.getType());
+        assertEquals(BigDecimal.valueOf(250000), transaction.getAmount());
+        assertEquals("TOP_UP_REQUEST", transaction.getReferenceType());
+        assertEquals("6", transaction.getReferenceId());
     }
 
     @Test

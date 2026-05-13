@@ -3,8 +3,11 @@ package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 import id.ac.ui.cs.advprog.manajemenpembayaran.exception.ResourceNotFoundException;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollStatus;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionHistory;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionType;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.PayrollRepository;
+import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TransactionHistoryRepository;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +32,9 @@ class PaymentReadServiceTest {
 
     @Mock
     private WalletRepository walletRepository;
+
+    @Mock
+    private TransactionHistoryRepository transactionHistoryRepository;
 
     @InjectMocks
     private PaymentReadService paymentReadService;
@@ -113,5 +119,22 @@ class PaymentReadServiceTest {
         when(walletRepository.findByOwnerId("missing")).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> paymentReadService.getWalletByOwnerId("missing"));
+    }
+
+    @Test
+    void getTransactionHistoryShouldReturnOwnerTransactions() {
+        TransactionHistory transaction = TransactionHistory.builder()
+                .ownerId("u1")
+                .type(TransactionType.TOP_UP)
+                .amount(BigDecimal.valueOf(250000))
+                .build();
+        when(transactionHistoryRepository.findByOwnerIdOrderByCreatedAtDesc("u1"))
+                .thenReturn(List.of(transaction));
+
+        List<TransactionHistory> result = paymentReadService.getTransactionHistory("u1");
+
+        assertEquals(1, result.size());
+        assertEquals("u1", result.get(0).getOwnerId());
+        assertEquals(TransactionType.TOP_UP, result.get(0).getType());
     }
 }

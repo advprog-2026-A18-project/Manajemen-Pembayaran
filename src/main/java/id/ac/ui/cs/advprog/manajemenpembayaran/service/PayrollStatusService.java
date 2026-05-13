@@ -3,8 +3,11 @@ package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 import id.ac.ui.cs.advprog.manajemenpembayaran.exception.ResourceNotFoundException;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollStatus;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionHistory;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionType;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.PayrollRepository;
+import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TransactionHistoryRepository;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.springframework.stereotype.Service;
 
@@ -15,10 +18,13 @@ public class PayrollStatusService {
 
     private final PayrollRepository payrollRepository;
     private final WalletRepository walletRepository;
+    private final TransactionHistoryRepository transactionHistoryRepository;
 
-    public PayrollStatusService(PayrollRepository payrollRepository, WalletRepository walletRepository) {
+    public PayrollStatusService(PayrollRepository payrollRepository, WalletRepository walletRepository,
+                                TransactionHistoryRepository transactionHistoryRepository) {
         this.payrollRepository = payrollRepository;
         this.walletRepository = walletRepository;
+        this.transactionHistoryRepository = transactionHistoryRepository;
     }
 
     public Payroll acceptPayroll(Long payrollId) {
@@ -38,7 +44,17 @@ public class PayrollStatusService {
         walletRepository.save(adminWallet);
 
         payroll.setStatus(PayrollStatus.ACCEPTED);
-        return payrollRepository.save(payroll);
+        Payroll acceptedPayroll = payrollRepository.save(payroll);
+
+        transactionHistoryRepository.save(TransactionHistory.builder()
+                .ownerId(payroll.getOwnerId())
+                .type(TransactionType.PAYROLL_PAYMENT)
+                .amount(payroll.getAmount())
+                .referenceType("PAYROLL")
+                .referenceId(String.valueOf(payroll.getId()))
+                .build());
+
+        return acceptedPayroll;
     }
 
     public Payroll rejectPayroll(Long payrollId, String rejectionReason) {

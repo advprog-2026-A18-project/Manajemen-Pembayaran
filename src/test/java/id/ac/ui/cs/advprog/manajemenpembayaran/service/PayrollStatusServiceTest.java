@@ -2,8 +2,11 @@ package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollStatus;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionHistory;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionType;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.PayrollRepository;
+import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TransactionHistoryRepository;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +32,9 @@ class PayrollStatusServiceTest {
 
     @Mock
     private WalletRepository walletRepository;
+
+    @Mock
+    private TransactionHistoryRepository transactionHistoryRepository;
 
     @InjectMocks
     private PayrollStatusService payrollStatusService;
@@ -210,6 +216,45 @@ class PayrollStatusServiceTest {
         assertEquals(BigDecimal.valueOf(320000), adminWallet.getBalance());
         verify(walletRepository).save(workerWallet);
         verify(walletRepository).save(adminWallet);
+    }
+
+    @Test
+    void acceptPayrollShouldRecordTransactionHistory() {
+        Payroll payroll = Payroll.builder()
+                .id(9L)
+                .ownerId("buruh-9")
+                .ownerRole("BURUH")
+                .kilogram(BigDecimal.valueOf(100))
+                .amount(BigDecimal.valueOf(180000))
+                .status(PayrollStatus.PENDING)
+                .build();
+        Wallet workerWallet = Wallet.builder()
+                .ownerId("buruh-9")
+                .ownerRole("BURUH")
+                .balance(BigDecimal.ZERO)
+                .build();
+        Wallet adminWallet = Wallet.builder()
+                .ownerId("admin-default")
+                .ownerRole("ADMIN")
+                .balance(BigDecimal.valueOf(500000))
+                .build();
+
+        when(payrollRepository.findById(9L)).thenReturn(Optional.of(payroll));
+        when(walletRepository.findByOwnerId("buruh-9")).thenReturn(Optional.of(workerWallet));
+        when(walletRepository.findByOwnerId("admin-default")).thenReturn(Optional.of(adminWallet));
+        when(payrollRepository.save(payroll)).thenReturn(payroll);
+
+        payrollStatusService.acceptPayroll(9L);
+
+        ArgumentCaptor<TransactionHistory> transactionCaptor = ArgumentCaptor.forClass(TransactionHistory.class);
+        verify(transactionHistoryRepository).save(transactionCaptor.capture());
+        TransactionHistory transaction = transactionCaptor.getValue();
+
+        assertEquals("buruh-9", transaction.getOwnerId());
+        assertEquals(TransactionType.PAYROLL_PAYMENT, transaction.getType());
+        assertEquals(BigDecimal.valueOf(180000), transaction.getAmount());
+        assertEquals("PAYROLL", transaction.getReferenceType());
+        assertEquals("9", transaction.getReferenceId());
     }
 
     @Test
