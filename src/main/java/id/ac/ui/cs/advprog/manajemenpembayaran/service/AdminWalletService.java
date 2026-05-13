@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -71,9 +72,14 @@ public class AdminWalletService {
     }
 
     public List<TopUpRequest> getTopUpRequests(TopUpStatus status) {
+        List<TopUpRequest> requests;
         if (status == null) {
-            return topUpRequestRepository.findAll();
+            requests = topUpRequestRepository.findAll();
+        } else {
+            requests = topUpRequestRepository.findByStatus(status);
         }
-        return topUpRequestRepository.findByStatus(status);
+        return requests.stream()
+                .sorted(Comparator.comparing(TopUpRequest::getCreatedAt).reversed())
+                .toList();
     }
 }
