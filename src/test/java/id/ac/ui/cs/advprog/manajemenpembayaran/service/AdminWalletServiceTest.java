@@ -12,6 +12,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -125,5 +127,29 @@ class AdminWalletServiceTest {
         assertEquals("Only PENDING top-up request can be confirmed", exception.getMessage());
         verify(walletRepository, never()).findByOwnerId("admin-default");
         verify(topUpRequestRepository, never()).save(request);
+    }
+
+    @Test
+    void getTopUpRequestsShouldReturnNewestRequestFirst() {
+        TopUpRequest olderRequest = TopUpRequest.builder()
+                .id(4L)
+                .ownerId("admin-default")
+                .amount(BigDecimal.valueOf(100000))
+                .status(TopUpStatus.PENDING)
+                .createdAt(LocalDateTime.of(2026, 5, 1, 10, 0))
+                .build();
+        TopUpRequest newerRequest = TopUpRequest.builder()
+                .id(5L)
+                .ownerId("admin-default")
+                .amount(BigDecimal.valueOf(200000))
+                .status(TopUpStatus.PENDING)
+                .createdAt(LocalDateTime.of(2026, 5, 2, 10, 0))
+                .build();
+
+        when(topUpRequestRepository.findAll()).thenReturn(List.of(olderRequest, newerRequest));
+
+        List<TopUpRequest> requests = adminWalletService.getTopUpRequests(null);
+
+        assertEquals(List.of(newerRequest, olderRequest), requests);
     }
 }
