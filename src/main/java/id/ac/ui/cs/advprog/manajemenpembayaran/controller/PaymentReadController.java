@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollStatus;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionHistory;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
 import id.ac.ui.cs.advprog.manajemenpembayaran.service.PaymentReadService;
 
@@ -42,5 +43,11 @@ public class PaymentReadController {
     @PreAuthorize("hasAnyAuthority('ADMIN','MANDOR','SUPIR','BURUH') && @paymentAuthorizationService.canAccessOwner(#ownerId)")
     public ResponseEntity<Wallet> getWallet(@PathVariable String ownerId) {
         return ResponseEntity.ok(paymentReadService.getWalletByOwnerId(ownerId));
+    }
+
+    @GetMapping("/transactions")
+    @PreAuthorize("hasAnyAuthority('ADMIN','MANDOR','SUPIR','BURUH') && @paymentAuthorizationService.canAccessOwner(#ownerId)")
+    public ResponseEntity<List<TransactionHistory>> getTransactionHistory(@RequestParam String ownerId) {
+        return ResponseEntity.ok(paymentReadService.getTransactionHistory(ownerId));
     }
 }
