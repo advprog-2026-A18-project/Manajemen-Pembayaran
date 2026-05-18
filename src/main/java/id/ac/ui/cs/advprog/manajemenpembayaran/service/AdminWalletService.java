@@ -5,7 +5,6 @@ import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpRequest;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpStatus;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TopUpRequestRepository;
-import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,13 +18,13 @@ public class AdminWalletService {
 
     private static final String ADMIN_WALLET_OWNER_ID = "admin-default";
 
-    private final WalletRepository walletRepository;
+    private final WalletTransferService walletTransferService;
     private final TopUpRequestRepository topUpRequestRepository;
     private final TransactionHistoryService transactionHistoryService;
 
-    public AdminWalletService(WalletRepository walletRepository, TopUpRequestRepository topUpRequestRepository,
+    public AdminWalletService(WalletTransferService walletTransferService, TopUpRequestRepository topUpRequestRepository,
                               TransactionHistoryService transactionHistoryService) {
-        this.walletRepository = walletRepository;
+        this.walletTransferService = walletTransferService;
         this.topUpRequestRepository = topUpRequestRepository;
         this.transactionHistoryService = transactionHistoryService;
     }
@@ -35,11 +34,7 @@ public class AdminWalletService {
             throw new IllegalArgumentException("topUpAmount must be greater than 0");
         }
 
-        Wallet adminWallet = walletRepository.findByOwnerId(ADMIN_WALLET_OWNER_ID)
-                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for ownerId=" + ADMIN_WALLET_OWNER_ID));
-
-        adminWallet.setBalance(adminWallet.getBalance().add(amount));
-        return walletRepository.save(adminWallet);
+        return walletTransferService.creditWallet(ADMIN_WALLET_OWNER_ID, amount);
     }
 
     public TopUpRequest createTopUpRequest(BigDecimal amount) {
@@ -65,11 +60,7 @@ public class AdminWalletService {
             throw new IllegalStateException("Only PENDING top-up request can be confirmed");
         }
 
-        Wallet adminWallet = walletRepository.findByOwnerId(ADMIN_WALLET_OWNER_ID)
-                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for ownerId=" + ADMIN_WALLET_OWNER_ID));
-
-        adminWallet.setBalance(adminWallet.getBalance().add(request.getAmount()));
-        walletRepository.save(adminWallet);
+        walletTransferService.creditWallet(ADMIN_WALLET_OWNER_ID, request.getAmount());
 
         request.setStatus(TopUpStatus.COMPLETED);
         request.setCompletedAt(LocalDateTime.now());

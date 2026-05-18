@@ -2,9 +2,7 @@ package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollStatus;
-import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.PayrollRepository;
-import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -28,7 +26,7 @@ class PayrollStatusServiceTest {
     private PayrollRepository payrollRepository;
 
     @Mock
-    private WalletRepository walletRepository;
+    private WalletTransferService walletTransferService;
 
     @Mock
     private TransactionHistoryService transactionHistoryService;
@@ -46,20 +44,7 @@ class PayrollStatusServiceTest {
                 .amount(BigDecimal.valueOf(180000))
                 .status(PayrollStatus.PENDING)
                 .build();
-        Wallet workerWallet = Wallet.builder()
-                .ownerId("buruh-1")
-                .ownerRole("BURUH")
-                .balance(BigDecimal.ZERO)
-                .build();
-        Wallet adminWallet = Wallet.builder()
-                .ownerId("admin-default")
-                .ownerRole("ADMIN")
-                .balance(BigDecimal.valueOf(500000))
-                .build();
-
         when(payrollRepository.findById(1L)).thenReturn(Optional.of(payroll));
-        when(walletRepository.findByOwnerId("buruh-1")).thenReturn(Optional.of(workerWallet));
-        when(walletRepository.findByOwnerId("admin-default")).thenReturn(Optional.of(adminWallet));
         when(payrollRepository.save(payroll)).thenReturn(payroll);
 
         Payroll acceptedPayroll = payrollStatusService.acceptPayroll(1L);
@@ -148,23 +133,13 @@ class PayrollStatusServiceTest {
                 .amount(BigDecimal.valueOf(162000))
                 .status(PayrollStatus.ACCEPTED)
                 .build();
-        Wallet wallet = Wallet.builder()
-                .id(1L)
-                .ownerId("buruh-5")
-                .ownerRole("BURUH")
-                .balance(BigDecimal.valueOf(50000))
-                .build();
-
         when(payrollRepository.findById(5L)).thenReturn(Optional.of(payroll));
-        when(walletRepository.findByOwnerId("buruh-5")).thenReturn(Optional.of(wallet));
-        when(walletRepository.save(wallet)).thenReturn(wallet);
         when(payrollRepository.save(payroll)).thenReturn(payroll);
 
         Payroll paidPayroll = payrollStatusService.payPayroll(5L);
 
         assertEquals(PayrollStatus.PAID, paidPayroll.getStatus());
-        assertEquals(BigDecimal.valueOf(212000), wallet.getBalance());
-        verify(walletRepository).save(wallet);
+        verify(walletTransferService).creditWallet("buruh-5", BigDecimal.valueOf(162000));
         verify(payrollRepository).save(payroll);
     }
 
@@ -190,29 +165,13 @@ class PayrollStatusServiceTest {
                 .amount(BigDecimal.valueOf(180000))
                 .status(PayrollStatus.PENDING)
                 .build();
-        Wallet workerWallet = Wallet.builder()
-                .ownerId("buruh-7")
-                .ownerRole("BURUH")
-                .balance(BigDecimal.valueOf(20000))
-                .build();
-        Wallet adminWallet = Wallet.builder()
-                .ownerId("admin-default")
-                .ownerRole("ADMIN")
-                .balance(BigDecimal.valueOf(500000))
-                .build();
-
         when(payrollRepository.findById(7L)).thenReturn(Optional.of(payroll));
-        when(walletRepository.findByOwnerId("buruh-7")).thenReturn(Optional.of(workerWallet));
-        when(walletRepository.findByOwnerId("admin-default")).thenReturn(Optional.of(adminWallet));
         when(payrollRepository.save(payroll)).thenReturn(payroll);
 
         Payroll acceptedPayroll = payrollStatusService.acceptPayroll(7L);
 
         assertEquals(PayrollStatus.ACCEPTED, acceptedPayroll.getStatus());
-        assertEquals(BigDecimal.valueOf(200000), workerWallet.getBalance());
-        assertEquals(BigDecimal.valueOf(320000), adminWallet.getBalance());
-        verify(walletRepository).save(workerWallet);
-        verify(walletRepository).save(adminWallet);
+        verify(walletTransferService).transfer("admin-default", "buruh-7", BigDecimal.valueOf(180000));
     }
 
     @Test
@@ -225,20 +184,7 @@ class PayrollStatusServiceTest {
                 .amount(BigDecimal.valueOf(180000))
                 .status(PayrollStatus.PENDING)
                 .build();
-        Wallet workerWallet = Wallet.builder()
-                .ownerId("buruh-9")
-                .ownerRole("BURUH")
-                .balance(BigDecimal.ZERO)
-                .build();
-        Wallet adminWallet = Wallet.builder()
-                .ownerId("admin-default")
-                .ownerRole("ADMIN")
-                .balance(BigDecimal.valueOf(500000))
-                .build();
-
         when(payrollRepository.findById(9L)).thenReturn(Optional.of(payroll));
-        when(walletRepository.findByOwnerId("buruh-9")).thenReturn(Optional.of(workerWallet));
-        when(walletRepository.findByOwnerId("admin-default")).thenReturn(Optional.of(adminWallet));
         when(payrollRepository.save(payroll)).thenReturn(payroll);
 
         payrollStatusService.acceptPayroll(9L);
@@ -256,31 +202,18 @@ class PayrollStatusServiceTest {
                 .amount(BigDecimal.valueOf(180000))
                 .status(PayrollStatus.PENDING)
                 .build();
-        Wallet workerWallet = Wallet.builder()
-                .ownerId("buruh-8")
-                .ownerRole("BURUH")
-                .balance(BigDecimal.ZERO)
-                .build();
-        Wallet adminWallet = Wallet.builder()
-                .ownerId("admin-default")
-                .ownerRole("ADMIN")
-                .balance(BigDecimal.valueOf(100000))
-                .build();
-
         when(payrollRepository.findById(8L)).thenReturn(Optional.of(payroll));
-        when(walletRepository.findByOwnerId("buruh-8")).thenReturn(Optional.of(workerWallet));
-        when(walletRepository.findByOwnerId("admin-default")).thenReturn(Optional.of(adminWallet));
+        org.mockito.Mockito.doThrow(new IllegalStateException("Wallet balance is insufficient"))
+                .when(walletTransferService)
+                .transfer("admin-default", "buruh-8", BigDecimal.valueOf(180000));
 
         IllegalStateException exception = assertThrows(
                 IllegalStateException.class,
                 () -> payrollStatusService.acceptPayroll(8L)
         );
 
-        assertEquals("Admin wallet balance is insufficient", exception.getMessage());
-        assertEquals(BigDecimal.ZERO, workerWallet.getBalance());
-        assertEquals(BigDecimal.valueOf(100000), adminWallet.getBalance());
-        verify(walletRepository, never()).save(workerWallet);
-        verify(walletRepository, never()).save(adminWallet);
+        assertEquals("Wallet balance is insufficient", exception.getMessage());
+        verify(walletTransferService).transfer("admin-default", "buruh-8", BigDecimal.valueOf(180000));
         verify(payrollRepository, never()).save(payroll);
     }
 }
