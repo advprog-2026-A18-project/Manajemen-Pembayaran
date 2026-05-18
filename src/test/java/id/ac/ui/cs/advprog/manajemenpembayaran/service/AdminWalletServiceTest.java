@@ -1,16 +1,11 @@
 package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 
-import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionHistory;
-import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionType;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpRequest;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpStatus;
-import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TransactionHistoryRepository;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TopUpRequestRepository;
-import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,13 +28,13 @@ import org.springframework.transaction.annotation.Transactional;
 class AdminWalletServiceTest {
 
     @Mock
-    private WalletRepository walletRepository;
+    private WalletTransferService walletTransferService;
 
     @Mock
     private TopUpRequestRepository topUpRequestRepository;
 
     @Mock
-    private TransactionHistoryRepository transactionHistoryRepository;
+    private TransactionHistoryService transactionHistoryService;
 
     @InjectMocks
     private AdminWalletService adminWalletService;
@@ -49,16 +44,15 @@ class AdminWalletServiceTest {
         Wallet adminWallet = Wallet.builder()
                 .ownerId("admin-default")
                 .ownerRole("ADMIN")
-                .balance(BigDecimal.valueOf(100000))
+                .balance(BigDecimal.valueOf(350000))
                 .build();
 
-        when(walletRepository.findByOwnerId("admin-default")).thenReturn(Optional.of(adminWallet));
-        when(walletRepository.save(adminWallet)).thenReturn(adminWallet);
+        when(walletTransferService.creditWallet("admin-default", BigDecimal.valueOf(250000))).thenReturn(adminWallet);
 
         Wallet updatedWallet = adminWalletService.topUpAdminWallet(BigDecimal.valueOf(250000));
 
         assertEquals(BigDecimal.valueOf(350000), updatedWallet.getBalance());
-        verify(walletRepository).save(adminWallet);
+        verify(walletTransferService).creditWallet("admin-default", BigDecimal.valueOf(250000));
     }
 
     @Test
@@ -69,7 +63,7 @@ class AdminWalletServiceTest {
         );
 
         assertEquals("topUpAmount must be greater than 0", exception.getMessage());
-        verify(walletRepository, never()).findByOwnerId("admin-default");
+        verify(walletTransferService, never()).creditWallet("admin-default", BigDecimal.ZERO);
     }
 
     @Test
@@ -88,7 +82,7 @@ class AdminWalletServiceTest {
         assertEquals("admin-default", result.getOwnerId());
         assertEquals(BigDecimal.valueOf(250000), result.getAmount());
         assertEquals(TopUpStatus.PENDING, result.getStatus());
-        verify(walletRepository, never()).findByOwnerId("admin-default");
+        verify(walletTransferService, never()).creditWallet("admin-default", BigDecimal.valueOf(250000));
     }
 
     @Test
@@ -106,15 +100,13 @@ class AdminWalletServiceTest {
                 .build();
 
         when(topUpRequestRepository.findById(2L)).thenReturn(Optional.of(request));
-        when(walletRepository.findByOwnerId("admin-default")).thenReturn(Optional.of(adminWallet));
-        when(walletRepository.save(adminWallet)).thenReturn(adminWallet);
+        when(walletTransferService.creditWallet("admin-default", BigDecimal.valueOf(250000))).thenReturn(adminWallet);
         when(topUpRequestRepository.save(request)).thenReturn(request);
 
         TopUpRequest confirmedRequest = adminWalletService.confirmTopUpRequest(2L);
 
         assertEquals(TopUpStatus.COMPLETED, confirmedRequest.getStatus());
-        assertEquals(BigDecimal.valueOf(350000), adminWallet.getBalance());
-        verify(walletRepository).save(adminWallet);
+        verify(walletTransferService).creditWallet("admin-default", BigDecimal.valueOf(250000));
         verify(topUpRequestRepository).save(request);
     }
 
@@ -133,21 +125,12 @@ class AdminWalletServiceTest {
                 .build();
 
         when(topUpRequestRepository.findById(6L)).thenReturn(Optional.of(request));
-        when(walletRepository.findByOwnerId("admin-default")).thenReturn(Optional.of(adminWallet));
-        when(walletRepository.save(adminWallet)).thenReturn(adminWallet);
+        when(walletTransferService.creditWallet("admin-default", BigDecimal.valueOf(250000))).thenReturn(adminWallet);
         when(topUpRequestRepository.save(request)).thenReturn(request);
 
         adminWalletService.confirmTopUpRequest(6L);
 
-        ArgumentCaptor<TransactionHistory> transactionCaptor = ArgumentCaptor.forClass(TransactionHistory.class);
-        verify(transactionHistoryRepository).save(transactionCaptor.capture());
-        TransactionHistory transaction = transactionCaptor.getValue();
-
-        assertEquals("admin-default", transaction.getOwnerId());
-        assertEquals(TransactionType.TOP_UP, transaction.getType());
-        assertEquals(BigDecimal.valueOf(250000), transaction.getAmount());
-        assertEquals("TOP_UP_REQUEST", transaction.getReferenceType());
-        assertEquals("6", transaction.getReferenceId());
+        verify(transactionHistoryService).recordTopUp("admin-default", BigDecimal.valueOf(250000), 6L);
     }
 
     @Test
@@ -167,7 +150,7 @@ class AdminWalletServiceTest {
         );
 
         assertEquals("Only PENDING top-up request can be confirmed", exception.getMessage());
-        verify(walletRepository, never()).findByOwnerId("admin-default");
+        verify(walletTransferService, never()).creditWallet("admin-default", BigDecimal.valueOf(250000));
         verify(topUpRequestRepository, never()).save(request);
     }
 

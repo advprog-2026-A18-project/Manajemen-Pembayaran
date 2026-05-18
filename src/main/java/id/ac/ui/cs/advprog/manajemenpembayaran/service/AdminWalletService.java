@@ -1,14 +1,10 @@
 package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 
 import id.ac.ui.cs.advprog.manajemenpembayaran.exception.ResourceNotFoundException;
-import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionHistory;
-import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionType;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpRequest;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpStatus;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
-import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TransactionHistoryRepository;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TopUpRequestRepository;
-import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,15 +18,15 @@ public class AdminWalletService {
 
     private static final String ADMIN_WALLET_OWNER_ID = "admin-default";
 
-    private final WalletRepository walletRepository;
+    private final WalletTransferService walletTransferService;
     private final TopUpRequestRepository topUpRequestRepository;
-    private final TransactionHistoryRepository transactionHistoryRepository;
+    private final TransactionHistoryService transactionHistoryService;
 
-    public AdminWalletService(WalletRepository walletRepository, TopUpRequestRepository topUpRequestRepository,
-                              TransactionHistoryRepository transactionHistoryRepository) {
-        this.walletRepository = walletRepository;
+    public AdminWalletService(WalletTransferService walletTransferService, TopUpRequestRepository topUpRequestRepository,
+                              TransactionHistoryService transactionHistoryService) {
+        this.walletTransferService = walletTransferService;
         this.topUpRequestRepository = topUpRequestRepository;
-        this.transactionHistoryRepository = transactionHistoryRepository;
+        this.transactionHistoryService = transactionHistoryService;
     }
 
     public Wallet topUpAdminWallet(BigDecimal amount) {
@@ -38,11 +34,7 @@ public class AdminWalletService {
             throw new IllegalArgumentException("topUpAmount must be greater than 0");
         }
 
-        Wallet adminWallet = walletRepository.findByOwnerId(ADMIN_WALLET_OWNER_ID)
-                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for ownerId=" + ADMIN_WALLET_OWNER_ID));
-
-        adminWallet.setBalance(adminWallet.getBalance().add(amount));
-        return walletRepository.save(adminWallet);
+        return walletTransferService.creditWallet(ADMIN_WALLET_OWNER_ID, amount);
     }
 
     public TopUpRequest createTopUpRequest(BigDecimal amount) {
@@ -68,23 +60,13 @@ public class AdminWalletService {
             throw new IllegalStateException("Only PENDING top-up request can be confirmed");
         }
 
-        Wallet adminWallet = walletRepository.findByOwnerId(ADMIN_WALLET_OWNER_ID)
-                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for ownerId=" + ADMIN_WALLET_OWNER_ID));
-
-        adminWallet.setBalance(adminWallet.getBalance().add(request.getAmount()));
-        walletRepository.save(adminWallet);
+        walletTransferService.creditWallet(ADMIN_WALLET_OWNER_ID, request.getAmount());
 
         request.setStatus(TopUpStatus.COMPLETED);
         request.setCompletedAt(LocalDateTime.now());
         TopUpRequest completedRequest = topUpRequestRepository.save(request);
 
-        transactionHistoryRepository.save(TransactionHistory.builder()
-                .ownerId(request.getOwnerId())
-                .type(TransactionType.TOP_UP)
-                .amount(request.getAmount())
-                .referenceType("TOP_UP_REQUEST")
-                .referenceId(String.valueOf(request.getId()))
-                .build());
+        transactionHistoryService.recordTopUp(request.getOwnerId(), request.getAmount(), request.getId());
 
         return completedRequest;
     }
