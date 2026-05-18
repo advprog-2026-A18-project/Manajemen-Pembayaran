@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.manajemenpembayaran.security;
 
+import id.ac.ui.cs.advprog.manajemenpembayaran.constant.PaymentConstants;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,7 @@ public class PaymentAuthorizationService {
         }
 
         boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(authority -> "ADMIN".equals(authority.getAuthority()));
+                .anyMatch(authority -> PaymentConstants.Role.ADMIN.equals(authority.getAuthority()));
 
         return isAdmin || ownerId.equals(authentication.getName());
     }

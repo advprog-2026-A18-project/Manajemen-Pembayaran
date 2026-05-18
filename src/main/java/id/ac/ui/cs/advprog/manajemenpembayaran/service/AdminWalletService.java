@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 
+import id.ac.ui.cs.advprog.manajemenpembayaran.constant.PaymentConstants;
 import id.ac.ui.cs.advprog.manajemenpembayaran.exception.ResourceNotFoundException;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpRequest;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpStatus;
@@ -16,7 +17,7 @@ import java.util.List;
 @Service
 public class AdminWalletService {
 
-    private static final String ADMIN_WALLET_OWNER_ID = "admin-default";
+    private static final String ADMIN_WALLET_OWNER_ID = PaymentConstants.Owner.ADMIN_DEFAULT;
 
     private final WalletTransferService walletTransferService;
     private final TopUpRequestRepository topUpRequestRepository;
