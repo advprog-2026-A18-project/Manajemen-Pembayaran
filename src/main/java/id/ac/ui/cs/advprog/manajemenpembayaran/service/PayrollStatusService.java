@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 
+import id.ac.ui.cs.advprog.manajemenpembayaran.constant.PaymentConstants;
 import id.ac.ui.cs.advprog.manajemenpembayaran.exception.ResourceNotFoundException;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollStatus;
@@ -10,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class PayrollStatusService {
 
-    private static final String ADMIN_WALLET_OWNER_ID = "admin-default";
+    private static final String ADMIN_WALLET_OWNER_ID = PaymentConstants.Owner.ADMIN_DEFAULT;
 
     private final PayrollRepository payrollRepository;
     private final WalletTransferService walletTransferService;

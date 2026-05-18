@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 
+import id.ac.ui.cs.advprog.manajemenpembayaran.constant.PaymentConstants;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionHistory;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionType;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TransactionHistoryRepository;
@@ -10,8 +11,8 @@ import java.math.BigDecimal;
 @Service
 public class TransactionHistoryService {
 
-    private static final String TOP_UP_REFERENCE_TYPE = "TOP_UP_REQUEST";
-    private static final String PAYROLL_REFERENCE_TYPE = "PAYROLL";
+    private static final String TOP_UP_REFERENCE_TYPE = PaymentConstants.Reference.TOP_UP_REQUEST;
+    private static final String PAYROLL_REFERENCE_TYPE = PaymentConstants.Reference.PAYROLL;
 
     private final TransactionHistoryRepository transactionHistoryRepository;
 

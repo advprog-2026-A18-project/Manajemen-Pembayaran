@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.manajemenpembayaran.config;
 
+import id.ac.ui.cs.advprog.manajemenpembayaran.constant.PaymentConstants;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollRateConfig;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.PayrollRateConfigRepository;
@@ -54,10 +55,26 @@ public class PaymentDataInitializer implements CommandLineRunner {
 
     void seedDefaultWalletsIfMissing() {
         List<Wallet> defaults = List.of(
-                Wallet.builder().ownerId("admin-default").ownerRole("ADMIN").balance(BigDecimal.ZERO).build(),
-                Wallet.builder().ownerId("mandor-default").ownerRole("MANDOR").balance(BigDecimal.ZERO).build(),
-                Wallet.builder().ownerId("buruh-default").ownerRole("BURUH").balance(BigDecimal.ZERO).build(),
-                Wallet.builder().ownerId("supir-default").ownerRole("SUPIR").balance(BigDecimal.ZERO).build()
+                Wallet.builder()
+                        .ownerId(PaymentConstants.Owner.ADMIN_DEFAULT)
+                        .ownerRole(PaymentConstants.Role.ADMIN)
+                        .balance(BigDecimal.ZERO)
+                        .build(),
+                Wallet.builder()
+                        .ownerId(PaymentConstants.Owner.MANDOR_DEFAULT)
+                        .ownerRole(PaymentConstants.Role.MANDOR)
+                        .balance(BigDecimal.ZERO)
+                        .build(),
+                Wallet.builder()
+                        .ownerId(PaymentConstants.Owner.BURUH_DEFAULT)
+                        .ownerRole(PaymentConstants.Role.BURUH)
+                        .balance(BigDecimal.ZERO)
+                        .build(),
+                Wallet.builder()
+                        .ownerId(PaymentConstants.Owner.SUPIR_DEFAULT)
+                        .ownerRole(PaymentConstants.Role.SUPIR)
+                        .balance(BigDecimal.ZERO)
+                        .build()
         );
 
         for (Wallet wallet : defaults) {
