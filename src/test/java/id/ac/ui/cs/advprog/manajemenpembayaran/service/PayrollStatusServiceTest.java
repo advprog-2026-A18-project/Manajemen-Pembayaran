@@ -2,11 +2,8 @@ package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollStatus;
-import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionHistory;
-import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionType;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.PayrollRepository;
-import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TransactionHistoryRepository;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +31,7 @@ class PayrollStatusServiceTest {
     private WalletRepository walletRepository;
 
     @Mock
-    private TransactionHistoryRepository transactionHistoryRepository;
+    private TransactionHistoryService transactionHistoryService;
 
     @InjectMocks
     private PayrollStatusService payrollStatusService;
@@ -246,15 +243,7 @@ class PayrollStatusServiceTest {
 
         payrollStatusService.acceptPayroll(9L);
 
-        ArgumentCaptor<TransactionHistory> transactionCaptor = ArgumentCaptor.forClass(TransactionHistory.class);
-        verify(transactionHistoryRepository).save(transactionCaptor.capture());
-        TransactionHistory transaction = transactionCaptor.getValue();
-
-        assertEquals("buruh-9", transaction.getOwnerId());
-        assertEquals(TransactionType.PAYROLL_PAYMENT, transaction.getType());
-        assertEquals(BigDecimal.valueOf(180000), transaction.getAmount());
-        assertEquals("PAYROLL", transaction.getReferenceType());
-        assertEquals("9", transaction.getReferenceId());
+        verify(transactionHistoryService).recordPayrollPayment("buruh-9", BigDecimal.valueOf(180000), 9L);
     }
 
     @Test

@@ -3,11 +3,8 @@ package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 import id.ac.ui.cs.advprog.manajemenpembayaran.exception.ResourceNotFoundException;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollStatus;
-import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionHistory;
-import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionType;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.PayrollRepository;
-import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TransactionHistoryRepository;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.springframework.stereotype.Service;
 
@@ -18,13 +15,13 @@ public class PayrollStatusService {
 
     private final PayrollRepository payrollRepository;
     private final WalletRepository walletRepository;
-    private final TransactionHistoryRepository transactionHistoryRepository;
+    private final TransactionHistoryService transactionHistoryService;
 
     public PayrollStatusService(PayrollRepository payrollRepository, WalletRepository walletRepository,
-                                TransactionHistoryRepository transactionHistoryRepository) {
+                                TransactionHistoryService transactionHistoryService) {
         this.payrollRepository = payrollRepository;
         this.walletRepository = walletRepository;
-        this.transactionHistoryRepository = transactionHistoryRepository;
+        this.transactionHistoryService = transactionHistoryService;
     }
 
     public Payroll acceptPayroll(Long payrollId) {
@@ -46,13 +43,7 @@ public class PayrollStatusService {
         payroll.setStatus(PayrollStatus.ACCEPTED);
         Payroll acceptedPayroll = payrollRepository.save(payroll);
 
-        transactionHistoryRepository.save(TransactionHistory.builder()
-                .ownerId(payroll.getOwnerId())
-                .type(TransactionType.PAYROLL_PAYMENT)
-                .amount(payroll.getAmount())
-                .referenceType("PAYROLL")
-                .referenceId(String.valueOf(payroll.getId()))
-                .build());
+        transactionHistoryService.recordPayrollPayment(payroll.getOwnerId(), payroll.getAmount(), payroll.getId());
 
         return acceptedPayroll;
     }
