@@ -5,6 +5,7 @@ import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollStatus;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.PayrollRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PayrollStatusService {
@@ -22,6 +23,7 @@ public class PayrollStatusService {
         this.transactionHistoryService = transactionHistoryService;
     }
 
+    @Transactional
     public Payroll acceptPayroll(Long payrollId) {
         Payroll payroll = findPayroll(payrollId);
         ensureStatus(payroll, PayrollStatus.PENDING, "Only PENDING payroll can be accepted");
@@ -49,6 +51,7 @@ public class PayrollStatusService {
         return payrollRepository.save(payroll);
     }
 
+    @Transactional
     public Payroll payPayroll(Long payrollId) {
         Payroll payroll = findPayroll(payrollId);
         ensureStatus(payroll, PayrollStatus.ACCEPTED, "Only ACCEPTED payroll can be paid");

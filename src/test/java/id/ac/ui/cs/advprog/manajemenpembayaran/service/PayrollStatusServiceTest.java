@@ -9,11 +9,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.lang.reflect.Method;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -215,5 +218,19 @@ class PayrollStatusServiceTest {
         assertEquals("Wallet balance is insufficient", exception.getMessage());
         verify(walletTransferService).transfer("admin-default", "buruh-8", BigDecimal.valueOf(180000));
         verify(payrollRepository, never()).save(payroll);
+    }
+
+    @Test
+    void acceptPayrollShouldRunInTransaction() throws NoSuchMethodException {
+        Method acceptMethod = PayrollStatusService.class.getMethod("acceptPayroll", Long.class);
+
+        assertTrue(acceptMethod.isAnnotationPresent(Transactional.class));
+    }
+
+    @Test
+    void payPayrollShouldRunInTransaction() throws NoSuchMethodException {
+        Method payMethod = PayrollStatusService.class.getMethod("payPayroll", Long.class);
+
+        assertTrue(payMethod.isAnnotationPresent(Transactional.class));
     }
 }
