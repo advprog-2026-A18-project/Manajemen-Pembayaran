@@ -20,6 +20,9 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final String USER_EMAIL_HEADER = "X-User-Email";
+    private static final String USER_ROLE_HEADER = "X-User-Role";
+
     private final ObjectProvider<JwtUtils> jwtUtilsProvider;
 
     @Override
@@ -38,21 +41,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             jwt = authHeader.substring(7);
         }
 
-        if (jwt != null && jwtUtils.validateToken(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
-            String email = jwtUtils.getEmailFromToken(jwt);
-            String role = jwtUtils.getRoleFromToken(jwt);
-
-            // Kita gunakan Authority 'ADMIN' agar sesuai dengan PreAuthorize('hasAuthority')
-            SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
-
-            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                    email, null, Collections.singletonList(authority)
-            );
-            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-            SecurityContextHolder.getContext().setAuthentication(authToken);
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (jwt != null && jwtUtils.validateToken(jwt)) {
+                authenticate(request, jwtUtils.getEmailFromToken(jwt), jwtUtils.getRoleFromToken(jwt));
+            } else {
+                authenticateFromGatewayHeaders(request);
+            }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void authenticateFromGatewayHeaders(HttpServletRequest request) {
+        String email = request.getHeader(USER_EMAIL_HEADER);
+        String role = request.getHeader(USER_ROLE_HEADER);
+
+        if (email != null && !email.isBlank() && role != null && !role.isBlank()) {
+            authenticate(request, email, role);
+        }
+    }
+
+    private void authenticate(HttpServletRequest request, String email, String role) {
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
+
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                email, null, Collections.singletonList(authority)
+        );
+        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+        SecurityContextHolder.getContext().setAuthentication(authToken);
     }
 }
