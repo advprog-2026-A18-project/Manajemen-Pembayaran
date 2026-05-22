@@ -3,8 +3,11 @@ package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 import id.ac.ui.cs.advprog.manajemenpembayaran.exception.ResourceNotFoundException;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollStatus;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionHistory;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionType;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.PayrollRepository;
+import id.ac.ui.cs.advprog.manajemenpembayaran.repository.TransactionHistoryRepository;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +32,9 @@ class PaymentReadServiceTest {
 
     @Mock
     private WalletRepository walletRepository;
+
+    @Mock
+    private TransactionHistoryRepository transactionHistoryRepository;
 
     @InjectMocks
     private PaymentReadService paymentReadService;
@@ -114,4 +120,70 @@ class PaymentReadServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> paymentReadService.getWalletByOwnerId("missing"));
     }
+
+    @Test
+    void getTransactionHistoryShouldReturnOwnerTransactions() {
+        TransactionHistory transaction = TransactionHistory.builder()
+                .ownerId("u1")
+                .type(TransactionType.TOP_UP)
+                .amount(BigDecimal.valueOf(250000))
+                .build();
+        when(transactionHistoryRepository.findByOwnerIdOrderByCreatedAtDesc("u1"))
+                .thenReturn(List.of(transaction));
+
+        List<TransactionHistory> result = paymentReadService.getTransactionHistory("u1");
+
+        assertEquals(1, result.size());
+        assertEquals("u1", result.get(0).getOwnerId());
+        assertEquals(TransactionType.TOP_UP, result.get(0).getType());
+    }
+    @Test
+    void getAllPayrollsShouldFilterStatusAndDateRange() {
+        Payroll pendingInside = Payroll.builder()
+                .status(PayrollStatus.PENDING)
+                .createdAt(LocalDateTime.of(2026, 3, 3, 12, 0))
+                .build();
+        Payroll acceptedInside = Payroll.builder()
+                .status(PayrollStatus.ACCEPTED)
+                .createdAt(LocalDateTime.of(2026, 3, 3, 12, 0))
+                .build();
+        Payroll pendingOutside = Payroll.builder()
+                .status(PayrollStatus.PENDING)
+                .createdAt(LocalDateTime.of(2026, 4, 1, 12, 0))
+                .build();
+        when(payrollRepository.findAll()).thenReturn(List.of(pendingInside, acceptedInside, pendingOutside));
+
+        List<Payroll> result = paymentReadService.getAllPayrolls(
+                PayrollStatus.PENDING,
+                LocalDate.of(2026, 3, 1),
+                LocalDate.of(2026, 3, 31));
+
+        assertEquals(List.of(pendingInside), result);
+    }
+
+    @Test
+    void getAllPayrollsShouldUseOpenDateRangeWhenDatesMissing() {
+        Payroll oldPayroll = Payroll.builder()
+                .status(PayrollStatus.PENDING)
+                .createdAt(LocalDateTime.of(2026, 1, 1, 12, 0))
+                .build();
+        Payroll newPayroll = Payroll.builder()
+                .status(PayrollStatus.ACCEPTED)
+                .createdAt(LocalDateTime.of(2026, 5, 1, 12, 0))
+                .build();
+        when(payrollRepository.findAll()).thenReturn(List.of(oldPayroll, newPayroll));
+
+        List<Payroll> fromOnly = paymentReadService.getAllPayrolls(null, LocalDate.of(2026, 3, 1), null);
+        List<Payroll> toOnly = paymentReadService.getAllPayrolls(null, null, LocalDate.of(2026, 3, 1));
+
+        assertEquals(List.of(newPayroll), fromOnly);
+        assertEquals(List.of(oldPayroll), toOnly);
+    }
+
+    @Test
+    void getAllPayrollsShouldThrowWhenStartDateAfterEndDate() {
+        assertThrows(IllegalArgumentException.class,
+                () -> paymentReadService.getAllPayrolls(null, LocalDate.of(2026, 3, 7), LocalDate.of(2026, 3, 6)));
+    }
+
 }

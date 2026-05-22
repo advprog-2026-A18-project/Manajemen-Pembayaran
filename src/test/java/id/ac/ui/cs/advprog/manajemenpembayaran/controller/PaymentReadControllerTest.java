@@ -3,6 +3,8 @@ package id.ac.ui.cs.advprog.manajemenpembayaran.controller;
 import id.ac.ui.cs.advprog.manajemenpembayaran.exception.ResourceNotFoundException;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollStatus;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionHistory;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TransactionType;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
 import id.ac.ui.cs.advprog.manajemenpembayaran.security.JwtUtils;
 import id.ac.ui.cs.advprog.manajemenpembayaran.service.PaymentReadService;
@@ -115,5 +117,27 @@ class PaymentReadControllerTest {
         mockMvc.perform(get("/api/pembayaran/wallets/missing"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Wallet not found for ownerId=missing"));
+    }
+
+    @Test
+    void getTransactionHistoryShouldReturnOwnerTransactions() throws Exception {
+        TransactionHistory transaction = TransactionHistory.builder()
+                .id(1L)
+                .ownerId("u1")
+                .type(TransactionType.PAYROLL_PAYMENT)
+                .amount(BigDecimal.valueOf(180000))
+                .referenceType("PAYROLL")
+                .referenceId("9")
+                .build();
+
+        when(paymentReadService.getTransactionHistory("u1")).thenReturn(List.of(transaction));
+
+        mockMvc.perform(get("/api/pembayaran/transactions")
+                        .param("ownerId", "u1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].ownerId").value("u1"))
+                .andExpect(jsonPath("$[0].type").value("PAYROLL_PAYMENT"))
+                .andExpect(jsonPath("$[0].referenceType").value("PAYROLL"))
+                .andExpect(jsonPath("$[0].referenceId").value("9"));
     }
 }

@@ -12,9 +12,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollStatus;
-import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
+import id.ac.ui.cs.advprog.manajemenpembayaran.dto.response.PayrollResponse;
+import id.ac.ui.cs.advprog.manajemenpembayaran.dto.response.TransactionHistoryResponse;
+import id.ac.ui.cs.advprog.manajemenpembayaran.dto.response.WalletResponse;
 import id.ac.ui.cs.advprog.manajemenpembayaran.service.PaymentReadService;
 
 @RestController
@@ -29,18 +30,40 @@ public class PaymentReadController {
 
     @GetMapping("/payrolls")
     @PreAuthorize("hasAnyAuthority('ADMIN','MANDOR','SUPIR','BURUH') && @paymentAuthorizationService.canAccessOwner(#ownerId)")
-    public ResponseEntity<List<Payroll>> getPayrolls(
+    public ResponseEntity<List<PayrollResponse>> getPayrolls(
             @RequestParam String ownerId,
             @RequestParam(required = false) PayrollStatus status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
-        return ResponseEntity.ok(paymentReadService.getPayrolls(ownerId, status, startDate, endDate));
+        return ResponseEntity.ok(paymentReadService.getPayrolls(ownerId, status, startDate, endDate).stream()
+                .map(PayrollResponse::from)
+                .toList());
+    }
+
+    @GetMapping("/admin/payrolls")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<List<PayrollResponse>> getAllPayrolls(
+            @RequestParam(required = false) PayrollStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        return ResponseEntity.ok(paymentReadService.getAllPayrolls(status, startDate, endDate).stream()
+                .map(PayrollResponse::from)
+                .toList());
     }
 
     @GetMapping("/wallets/{ownerId}")
     @PreAuthorize("hasAnyAuthority('ADMIN','MANDOR','SUPIR','BURUH') && @paymentAuthorizationService.canAccessOwner(#ownerId)")
-    public ResponseEntity<Wallet> getWallet(@PathVariable String ownerId) {
-        return ResponseEntity.ok(paymentReadService.getWalletByOwnerId(ownerId));
+    public ResponseEntity<WalletResponse> getWallet(@PathVariable String ownerId) {
+        return ResponseEntity.ok(WalletResponse.from(paymentReadService.getWalletByOwnerId(ownerId)));
+    }
+
+    @GetMapping("/transactions")
+    @PreAuthorize("hasAnyAuthority('ADMIN','MANDOR','SUPIR','BURUH') && @paymentAuthorizationService.canAccessOwner(#ownerId)")
+    public ResponseEntity<List<TransactionHistoryResponse>> getTransactionHistory(@RequestParam String ownerId) {
+        return ResponseEntity.ok(paymentReadService.getTransactionHistory(ownerId).stream()
+                .map(TransactionHistoryResponse::from)
+                .toList());
     }
 }

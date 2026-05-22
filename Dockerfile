@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM eclipse-temurin:21-jdk AS builder
 WORKDIR /app
 
 
@@ -22,6 +22,6 @@ WORKDIR /app
 
 COPY --from=builder /app/build/libs/*.jar app.jar
 
-EXPOSE 8085
+EXPOSE 8085 9095
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

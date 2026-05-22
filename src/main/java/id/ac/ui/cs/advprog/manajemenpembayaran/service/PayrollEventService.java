@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.manajemenpembayaran.service;
 
+import id.ac.ui.cs.advprog.manajemenpembayaran.constant.PaymentConstants;
 import id.ac.ui.cs.advprog.manajemenpembayaran.dto.PayrollCalculationResult;
 import id.ac.ui.cs.advprog.manajemenpembayaran.dto.PayrollEventProcessResult;
 import id.ac.ui.cs.advprog.manajemenpembayaran.dto.event.HarvestApprovedEvent;
@@ -85,7 +86,7 @@ public class PayrollEventService {
 
         return payrollRepository.save(Payroll.builder()
                 .ownerId(event.getBuruhId())
-                .ownerRole("BURUH")
+                .ownerRole(PaymentConstants.Role.BURUH)
                 .kilogram(result.getKgUsed())
                 .rateUsed(result.getRateUsed())
                 .amount(result.getAmount())
@@ -104,7 +105,7 @@ public class PayrollEventService {
 
         return payrollRepository.save(Payroll.builder()
                 .ownerId(event.getSupirId())
-                .ownerRole("SUPIR")
+                .ownerRole(PaymentConstants.Role.SUPIR)
                 .kilogram(result.getKgUsed())
                 .rateUsed(result.getRateUsed())
                 .amount(result.getAmount())
@@ -123,7 +124,7 @@ public class PayrollEventService {
 
         return payrollRepository.save(Payroll.builder()
                 .ownerId(event.getMandorId())
-                .ownerRole("MANDOR")
+                .ownerRole(PaymentConstants.Role.MANDOR)
                 .kilogram(result.getKgUsed())
                 .rateUsed(result.getRateUsed())
                 .amount(result.getAmount())

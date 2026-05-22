@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.manajemenpembayaran.controller;
 
-import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpRequest;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.TopUpStatus;
 import id.ac.ui.cs.advprog.manajemenpembayaran.security.JwtUtils;
 import id.ac.ui.cs.advprog.manajemenpembayaran.service.AdminWalletService;
 import org.junit.jupiter.api.Test;
@@ -12,8 +13,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -32,14 +35,15 @@ class AdminWalletControllerTest {
     private JwtUtils jwtUtils;
 
     @Test
-    void topUpAdminWalletShouldReturnUpdatedWallet() throws Exception {
-        Wallet wallet = Wallet.builder()
+    void topUpAdminWalletShouldReturnPendingTopUpRequest() throws Exception {
+        TopUpRequest request = TopUpRequest.builder()
+                .id(1L)
                 .ownerId("admin-default")
-                .ownerRole("ADMIN")
-                .balance(BigDecimal.valueOf(350000))
+                .amount(BigDecimal.valueOf(250000))
+                .status(TopUpStatus.PENDING)
                 .build();
 
-        when(adminWalletService.topUpAdminWallet(BigDecimal.valueOf(250000))).thenReturn(wallet);
+        when(adminWalletService.createTopUpRequest(BigDecimal.valueOf(250000))).thenReturn(request);
 
         String payload = """
                 {
@@ -51,7 +55,48 @@ class AdminWalletControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.ownerId").value("admin-default"))
-                .andExpect(jsonPath("$.balance").value(350000));
+                .andExpect(jsonPath("$.amount").value(250000))
+                .andExpect(jsonPath("$.status").value("PENDING"));
+    }
+
+    @Test
+    void confirmTopUpRequestShouldReturnCompletedTopUpRequest() throws Exception {
+        TopUpRequest request = TopUpRequest.builder()
+                .id(2L)
+                .ownerId("admin-default")
+                .amount(BigDecimal.valueOf(250000))
+                .status(TopUpStatus.COMPLETED)
+                .build();
+
+        when(adminWalletService.confirmTopUpRequest(2L)).thenReturn(request);
+
+        mockMvc.perform(post("/api/pembayaran/admin/wallet/top-up/2/confirm"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(2))
+                .andExpect(jsonPath("$.ownerId").value("admin-default"))
+                .andExpect(jsonPath("$.amount").value(250000))
+                .andExpect(jsonPath("$.status").value("COMPLETED"));
+    }
+
+    @Test
+    void getTopUpRequestsShouldReturnRequestsFilteredByStatus() throws Exception {
+        TopUpRequest request = TopUpRequest.builder()
+                .id(3L)
+                .ownerId("admin-default")
+                .amount(BigDecimal.valueOf(100000))
+                .status(TopUpStatus.PENDING)
+                .build();
+
+        when(adminWalletService.getTopUpRequests(TopUpStatus.PENDING)).thenReturn(List.of(request));
+
+        mockMvc.perform(get("/api/pembayaran/admin/wallet/top-up")
+                        .param("status", "PENDING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(3))
+                .andExpect(jsonPath("$[0].ownerId").value("admin-default"))
+                .andExpect(jsonPath("$[0].amount").value(100000))
+                .andExpect(jsonPath("$[0].status").value("PENDING"));
     }
 }
