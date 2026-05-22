@@ -41,6 +41,18 @@ public class PaymentReadController {
                 .toList());
     }
 
+    @GetMapping("/admin/payrolls")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<List<PayrollResponse>> getAllPayrolls(
+            @RequestParam(required = false) PayrollStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        return ResponseEntity.ok(paymentReadService.getAllPayrolls(status, startDate, endDate).stream()
+                .map(PayrollResponse::from)
+                .toList());
+    }
+
     @GetMapping("/wallets/{ownerId}")
     @PreAuthorize("hasAnyAuthority('ADMIN','MANDOR','SUPIR','BURUH') && @paymentAuthorizationService.canAccessOwner(#ownerId)")
     public ResponseEntity<WalletResponse> getWallet(@PathVariable String ownerId) {

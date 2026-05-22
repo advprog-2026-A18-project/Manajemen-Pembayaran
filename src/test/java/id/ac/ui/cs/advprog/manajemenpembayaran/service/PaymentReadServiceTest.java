@@ -137,4 +137,53 @@ class PaymentReadServiceTest {
         assertEquals("u1", result.get(0).getOwnerId());
         assertEquals(TransactionType.TOP_UP, result.get(0).getType());
     }
+    @Test
+    void getAllPayrollsShouldFilterStatusAndDateRange() {
+        Payroll pendingInside = Payroll.builder()
+                .status(PayrollStatus.PENDING)
+                .createdAt(LocalDateTime.of(2026, 3, 3, 12, 0))
+                .build();
+        Payroll acceptedInside = Payroll.builder()
+                .status(PayrollStatus.ACCEPTED)
+                .createdAt(LocalDateTime.of(2026, 3, 3, 12, 0))
+                .build();
+        Payroll pendingOutside = Payroll.builder()
+                .status(PayrollStatus.PENDING)
+                .createdAt(LocalDateTime.of(2026, 4, 1, 12, 0))
+                .build();
+        when(payrollRepository.findAll()).thenReturn(List.of(pendingInside, acceptedInside, pendingOutside));
+
+        List<Payroll> result = paymentReadService.getAllPayrolls(
+                PayrollStatus.PENDING,
+                LocalDate.of(2026, 3, 1),
+                LocalDate.of(2026, 3, 31));
+
+        assertEquals(List.of(pendingInside), result);
+    }
+
+    @Test
+    void getAllPayrollsShouldUseOpenDateRangeWhenDatesMissing() {
+        Payroll oldPayroll = Payroll.builder()
+                .status(PayrollStatus.PENDING)
+                .createdAt(LocalDateTime.of(2026, 1, 1, 12, 0))
+                .build();
+        Payroll newPayroll = Payroll.builder()
+                .status(PayrollStatus.ACCEPTED)
+                .createdAt(LocalDateTime.of(2026, 5, 1, 12, 0))
+                .build();
+        when(payrollRepository.findAll()).thenReturn(List.of(oldPayroll, newPayroll));
+
+        List<Payroll> fromOnly = paymentReadService.getAllPayrolls(null, LocalDate.of(2026, 3, 1), null);
+        List<Payroll> toOnly = paymentReadService.getAllPayrolls(null, null, LocalDate.of(2026, 3, 1));
+
+        assertEquals(List.of(newPayroll), fromOnly);
+        assertEquals(List.of(oldPayroll), toOnly);
+    }
+
+    @Test
+    void getAllPayrollsShouldThrowWhenStartDateAfterEndDate() {
+        assertThrows(IllegalArgumentException.class,
+                () -> paymentReadService.getAllPayrolls(null, LocalDate.of(2026, 3, 7), LocalDate.of(2026, 3, 6)));
+    }
+
 }

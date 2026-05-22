@@ -52,6 +52,20 @@ public class PaymentReadService {
         return payrollRepository.findByOwnerIdAndStatusAndCreatedAtBetween(ownerId, status, from, to);
     }
 
+    public List<Payroll> getAllPayrolls(PayrollStatus status, LocalDate startDate, LocalDate endDate) {
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("startDate must be before or equal to endDate");
+        }
+
+        LocalDateTime from = startDate == null ? LocalDate.MIN.atStartOfDay() : startDate.atStartOfDay();
+        LocalDateTime to = endDate == null ? LocalDate.MAX.atStartOfDay() : endDate.plusDays(1).atStartOfDay().minusNanos(1);
+
+        return payrollRepository.findAll().stream()
+                .filter(payroll -> status == null || payroll.getStatus() == status)
+                .filter(payroll -> !payroll.getCreatedAt().isBefore(from) && !payroll.getCreatedAt().isAfter(to))
+                .toList();
+    }
+
     public Wallet getWalletByOwnerId(String ownerId) {
         return walletRepository.findByOwnerId(ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for ownerId=" + ownerId));

@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package mysawit.payment;
+
+option java_multiple_files = true;
+option java_package = "id.ac.ui.cs.advprog.mysawit.grpc.payment";
+option java_outer_classname = "PaymentInternalProto";
+
+service PaymentInternalService {
+  rpc ProcessHarvestApproved(ProcessHarvestApprovedRequest) returns (PayrollProcessResponse);
+  rpc ProcessShipmentMandorApproved(ProcessShipmentMandorApprovedRequest) returns (PayrollProcessResponse);
+  rpc ProcessShipmentAdminApproved(ProcessShipmentAdminApprovedRequest) returns (PayrollProcessResponse);
+}
+
+message ProcessHarvestApprovedRequest {
+  string event_id = 1;
+  string buruh_id = 2;
+  double kilogram = 3;
+}
+
+message ProcessShipmentMandorApprovedRequest {
+  string event_id = 1;
+  string supir_id = 2;
+  double kilogram = 3;
+}
+
+message ProcessShipmentAdminApprovedRequest {
+  string event_id = 1;
+  string mandor_id = 2;
+  double kilogram_diakui = 3;
+}
+
+message PayrollProcessResponse {
+  bool success = 1;
+  int64 payroll_id = 2;
+  bool duplicate = 3;
+  double amount = 4;
+  string source_type = 5;
+  string message = 6;
+}

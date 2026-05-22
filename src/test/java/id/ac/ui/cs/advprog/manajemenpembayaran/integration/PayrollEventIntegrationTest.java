@@ -30,7 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.jpa.show-sql=false"
+        "spring.jpa.show-sql=false",
+        "grpc.enabled=false"
 })
 class PayrollEventIntegrationTest {
 
