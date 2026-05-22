@@ -54,8 +54,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("me.paulschwarz:spring-dotenv:$dotenvVersion")
     implementation("io.jsonwebtoken:jjwt-api:$jjwtVersion")
     compileOnly("org.projectlombok:lombok")
