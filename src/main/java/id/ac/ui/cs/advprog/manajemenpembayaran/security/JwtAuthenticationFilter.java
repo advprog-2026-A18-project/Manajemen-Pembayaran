@@ -22,6 +22,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String USER_EMAIL_HEADER = "X-User-Email";
     private static final String USER_ROLE_HEADER = "X-User-Role";
+    private static final String USER_ID_HEADER = "X-User-Id";
 
     private final ObjectProvider<JwtUtils> jwtUtilsProvider;
 
@@ -43,7 +44,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
             if (jwt != null && jwtUtils.validateToken(jwt)) {
-                authenticate(request, jwtUtils.getEmailFromToken(jwt), jwtUtils.getRoleFromToken(jwt));
+                authenticate(request, resolvePrincipal(jwtUtils.getIdFromToken(jwt), jwtUtils.getEmailFromToken(jwt)),
+                        jwtUtils.getRoleFromToken(jwt));
             } else {
                 authenticateFromGatewayHeaders(request);
             }
@@ -53,19 +55,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private void authenticateFromGatewayHeaders(HttpServletRequest request) {
+        String userId = request.getHeader(USER_ID_HEADER);
         String email = request.getHeader(USER_EMAIL_HEADER);
         String role = request.getHeader(USER_ROLE_HEADER);
+        String principal = resolvePrincipal(userId, email);
 
-        if (email != null && !email.isBlank() && role != null && !role.isBlank()) {
-            authenticate(request, email, role);
+        if (principal != null && role != null && !role.isBlank()) {
+            authenticate(request, principal, role);
         }
     }
 
-    private void authenticate(HttpServletRequest request, String email, String role) {
+    private String resolvePrincipal(String userId, String email) {
+        if (userId != null && !userId.isBlank()) {
+            return userId;
+        }
+        if (email != null && !email.isBlank()) {
+            return email;
+        }
+        return null;
+    }
+
+    private void authenticate(HttpServletRequest request, String principal, String role) {
         SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
 
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                email, null, Collections.singletonList(authority)
+                principal, null, Collections.singletonList(authority)
         );
         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
