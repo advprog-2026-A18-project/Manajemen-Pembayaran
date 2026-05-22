@@ -47,6 +47,7 @@ class JwtAuthenticationFilterTest {
         when(provider.getIfAvailable()).thenReturn(jwtUtils);
         when(jwtUtils.validateToken("valid-token")).thenReturn(true);
         when(jwtUtils.getEmailFromToken("valid-token")).thenReturn("user@mysawit.id");
+        when(jwtUtils.getIdFromToken("valid-token")).thenReturn("user-123");
         when(jwtUtils.getRoleFromToken("valid-token")).thenReturn("ADMIN");
 
         JwtAuthenticationFilter filter = new JwtAuthenticationFilter(provider);
@@ -59,7 +60,7 @@ class JwtAuthenticationFilterTest {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         assertNotNull(authentication);
-        assertEquals("user@mysawit.id", authentication.getName());
+        assertEquals("user-123", authentication.getName());
         assertEquals("ADMIN", authentication.getAuthorities().iterator().next().getAuthority());
     }
 
@@ -79,5 +80,73 @@ class JwtAuthenticationFilterTest {
         filter.doFilter(request, response, chain);
 
         assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void shouldSetAuthenticationFromGatewayHeadersWhenJwtIsNotUsable() throws ServletException, IOException {
+        ObjectProvider<JwtUtils> provider = mock(ObjectProvider.class);
+        JwtUtils jwtUtils = mock(JwtUtils.class);
+        when(provider.getIfAvailable()).thenReturn(jwtUtils);
+
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(provider);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("X-User-Id", "admin-id");
+        request.addHeader("X-User-Email", "admin@mysawit.id");
+        request.addHeader("X-User-Role", "ADMIN");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, response, chain);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        assertNotNull(authentication);
+        assertEquals("admin-id", authentication.getName());
+        assertEquals("ADMIN", authentication.getAuthorities().iterator().next().getAuthority());
+    }
+
+    @Test
+    void shouldSetAuthenticationFromGatewayHeadersWhenBearerTokenFailsPaymentValidation()
+            throws ServletException, IOException {
+        ObjectProvider<JwtUtils> provider = mock(ObjectProvider.class);
+        JwtUtils jwtUtils = mock(JwtUtils.class);
+        when(provider.getIfAvailable()).thenReturn(jwtUtils);
+        when(jwtUtils.validateToken("gateway-validated-token")).thenReturn(false);
+
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(provider);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer gateway-validated-token");
+        request.addHeader("X-User-Id", "admin-id");
+        request.addHeader("X-User-Email", "admin@mysawit.id");
+        request.addHeader("X-User-Role", "ADMIN");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, response, chain);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        assertNotNull(authentication);
+        assertEquals("admin-id", authentication.getName());
+        assertEquals("ADMIN", authentication.getAuthorities().iterator().next().getAuthority());
+    }
+
+    @Test
+    void shouldUseGatewayEmailAsFallbackWhenUserIdHeaderIsMissing() throws ServletException, IOException {
+        ObjectProvider<JwtUtils> provider = mock(ObjectProvider.class);
+        JwtUtils jwtUtils = mock(JwtUtils.class);
+        when(provider.getIfAvailable()).thenReturn(jwtUtils);
+
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(provider);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("X-User-Email", "admin@mysawit.id");
+        request.addHeader("X-User-Role", "ADMIN");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, response, chain);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        assertNotNull(authentication);
+        assertEquals("admin@mysawit.id", authentication.getName());
+        assertEquals("ADMIN", authentication.getAuthorities().iterator().next().getAuthority());
     }
 }

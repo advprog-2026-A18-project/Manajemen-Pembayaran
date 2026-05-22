@@ -43,10 +43,12 @@ class JwtUtilsTest {
         String token = Jwts.builder()
                 .subject("user@mysawit.id")
                 .claim("role", "MANDOR")
+                .claim("id", "user-123")
                 .signWith(Keys.hmacShaKeyFor("this-is-a-test-secret-key-with-32-chars-min".getBytes(StandardCharsets.UTF_8)))
                 .compact();
 
         assertEquals("user@mysawit.id", jwtUtils.getEmailFromToken(token));
         assertEquals("MANDOR", jwtUtils.getRoleFromToken(token));
+        assertEquals("user-123", jwtUtils.getIdFromToken(token));
     }
 }
