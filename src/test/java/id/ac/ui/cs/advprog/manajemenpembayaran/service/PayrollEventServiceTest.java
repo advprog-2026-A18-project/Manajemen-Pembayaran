@@ -7,7 +7,9 @@ import id.ac.ui.cs.advprog.manajemenpembayaran.dto.event.ShipmentMandorApprovedE
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollRateConfig;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollSourceType;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.PayrollRepository;
+import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +30,9 @@ class PayrollEventServiceTest {
 
     @Mock
     private PayrollRepository payrollRepository;
+
+    @Mock
+    private WalletRepository walletRepository;
 
     @Mock
     private PayrollRateConfigService payrollRateConfigService;
@@ -73,6 +78,7 @@ class PayrollEventServiceTest {
         when(payrollRepository.findByIdempotencyKey("HARVEST_APPROVAL:evt-h-1")).thenReturn(Optional.empty());
         when(payrollRateConfigService.getCurrentRate()).thenReturn(rateConfig);
         when(payrollCalculatorService.calculateBuruh(new BigDecimal("100"), new BigDecimal("2000"))).thenReturn(calcResult);
+        when(walletRepository.findByOwnerId("buruh-1")).thenReturn(Optional.empty());
         when(payrollRepository.save(any(Payroll.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Payroll result = payrollEventService.processHarvestApproved(harvestEvent);
@@ -81,6 +87,12 @@ class PayrollEventServiceTest {
         assertEquals("BURUH", result.getOwnerRole());
         assertEquals(PayrollSourceType.HARVEST_APPROVAL, result.getSourceType());
         assertEquals("HARVEST_APPROVAL:evt-h-1", result.getIdempotencyKey());
+
+        ArgumentCaptor<Wallet> walletCaptor = ArgumentCaptor.forClass(Wallet.class);
+        verify(walletRepository).save(walletCaptor.capture());
+        assertEquals("buruh-1", walletCaptor.getValue().getOwnerId());
+        assertEquals("BURUH", walletCaptor.getValue().getOwnerRole());
+        assertEquals(BigDecimal.ZERO, walletCaptor.getValue().getBalance());
     }
 
     @Test
@@ -96,6 +108,7 @@ class PayrollEventServiceTest {
         when(payrollRepository.findByIdempotencyKey("SHIPMENT_MANDOR_APPROVAL:evt-s-1")).thenReturn(Optional.empty());
         when(payrollRateConfigService.getCurrentRate()).thenReturn(rateConfig);
         when(payrollCalculatorService.calculateSupir(new BigDecimal("50"), new BigDecimal("1500"))).thenReturn(calcResult);
+        when(walletRepository.findByOwnerId("supir-1")).thenReturn(Optional.empty());
         when(payrollRepository.save(any(Payroll.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Payroll result = payrollEventService.processShipmentMandorApproved(shipmentMandorEvent);
@@ -104,6 +117,9 @@ class PayrollEventServiceTest {
         assertEquals("SUPIR", result.getOwnerRole());
         assertEquals(PayrollSourceType.SHIPMENT_MANDOR_APPROVAL, result.getSourceType());
         assertEquals("SHIPMENT_MANDOR_APPROVAL:evt-s-1", result.getIdempotencyKey());
+
+        verify(walletRepository).save(argThat(wallet ->
+                "supir-1".equals(wallet.getOwnerId()) && "SUPIR".equals(wallet.getOwnerRole())));
     }
 
     @Test
@@ -119,6 +135,7 @@ class PayrollEventServiceTest {
         when(payrollRepository.findByIdempotencyKey("SHIPMENT_ADMIN_APPROVAL:evt-a-1")).thenReturn(Optional.empty());
         when(payrollRateConfigService.getCurrentRate()).thenReturn(rateConfig);
         when(payrollCalculatorService.calculateMandor(new BigDecimal("80"), new BigDecimal("2500"))).thenReturn(calcResult);
+        when(walletRepository.findByOwnerId("mandor-1")).thenReturn(Optional.empty());
         when(payrollRepository.save(any(Payroll.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Payroll result = payrollEventService.processShipmentAdminApproved(shipmentAdminEvent);
@@ -131,6 +148,31 @@ class PayrollEventServiceTest {
         ArgumentCaptor<Payroll> captor = ArgumentCaptor.forClass(Payroll.class);
         verify(payrollRepository).save(captor.capture());
         assertEquals(new BigDecimal("2500"), captor.getValue().getRateUsed());
+        verify(walletRepository).save(argThat(wallet ->
+                "mandor-1".equals(wallet.getOwnerId()) && "MANDOR".equals(wallet.getOwnerRole())));
+    }
+
+    @Test
+    void processHarvestApprovedShouldNotCreateWalletWhenWalletAlreadyExists() {
+        PayrollRateConfig rateConfig = PayrollRateConfig.builder().buruhRatePerKg(new BigDecimal("2000")).build();
+        PayrollCalculationResult calcResult = PayrollCalculationResult.builder()
+                .kgUsed(new BigDecimal("100"))
+                .rateUsed(new BigDecimal("2000"))
+                .amount(new BigDecimal("180000.00"))
+                .formulaDescription("Upah Buruh = rate * kilogram * 90%")
+                .build();
+        Wallet existingWallet = Wallet.builder().ownerId("buruh-1").ownerRole("BURUH").balance(BigDecimal.ZERO).build();
+
+        when(payrollRepository.findByIdempotencyKey("HARVEST_APPROVAL:evt-h-1")).thenReturn(Optional.empty());
+        when(payrollRateConfigService.getCurrentRate()).thenReturn(rateConfig);
+        when(payrollCalculatorService.calculateBuruh(new BigDecimal("100"), new BigDecimal("2000"))).thenReturn(calcResult);
+        when(walletRepository.findByOwnerId("buruh-1")).thenReturn(Optional.of(existingWallet));
+        when(payrollRepository.save(any(Payroll.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Payroll result = payrollEventService.processHarvestApproved(harvestEvent);
+
+        assertEquals("buruh-1", result.getOwnerId());
+        verify(walletRepository, never()).save(any(Wallet.class));
     }
 
     @Test
