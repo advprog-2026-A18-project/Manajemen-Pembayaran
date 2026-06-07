@@ -29,14 +29,8 @@ public class PayrollStatusService {
         Payroll payroll = findPayroll(payrollId);
         ensureStatus(payroll, PayrollStatus.PENDING, "Only PENDING payroll can be accepted");
 
-        walletTransferService.transfer(ADMIN_WALLET_OWNER_ID, payroll.getOwnerId(), payroll.getAmount());
-
         payroll.setStatus(PayrollStatus.ACCEPTED);
-        Payroll acceptedPayroll = payrollRepository.save(payroll);
-
-        transactionHistoryService.recordPayrollPayment(payroll.getOwnerId(), payroll.getAmount(), payroll.getId());
-
-        return acceptedPayroll;
+        return payrollRepository.save(payroll);
     }
 
     public Payroll rejectPayroll(Long payrollId, String rejectionReason) {
@@ -57,10 +51,14 @@ public class PayrollStatusService {
         Payroll payroll = findPayroll(payrollId);
         ensureStatus(payroll, PayrollStatus.ACCEPTED, "Only ACCEPTED payroll can be paid");
 
-        walletTransferService.creditWallet(payroll.getOwnerId(), payroll.getAmount());
+        walletTransferService.transfer(ADMIN_WALLET_OWNER_ID, payroll.getOwnerId(), payroll.getAmount());
 
         payroll.setStatus(PayrollStatus.PAID);
-        return payrollRepository.save(payroll);
+        Payroll paidPayroll = payrollRepository.save(payroll);
+
+        transactionHistoryService.recordPayrollPayment(payroll.getOwnerId(), payroll.getAmount(), payroll.getId());
+
+        return paidPayroll;
     }
 
     private Payroll findPayroll(Long payrollId) {
