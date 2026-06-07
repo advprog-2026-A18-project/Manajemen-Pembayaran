@@ -9,20 +9,27 @@ import id.ac.ui.cs.advprog.manajemenpembayaran.dto.event.ShipmentMandorApprovedE
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollRateConfig;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.PayrollSourceType;
+import id.ac.ui.cs.advprog.manajemenpembayaran.model.Wallet;
 import id.ac.ui.cs.advprog.manajemenpembayaran.repository.PayrollRepository;
+import id.ac.ui.cs.advprog.manajemenpembayaran.repository.WalletRepository;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 
 @Service
 public class PayrollEventService {
 
     private final PayrollRepository payrollRepository;
+    private final WalletRepository walletRepository;
     private final PayrollRateConfigService payrollRateConfigService;
     private final PayrollCalculatorService payrollCalculatorService;
 
     public PayrollEventService(PayrollRepository payrollRepository,
+                               WalletRepository walletRepository,
                                PayrollRateConfigService payrollRateConfigService,
                                PayrollCalculatorService payrollCalculatorService) {
         this.payrollRepository = payrollRepository;
+        this.walletRepository = walletRepository;
         this.payrollRateConfigService = payrollRateConfigService;
         this.payrollCalculatorService = payrollCalculatorService;
     }
@@ -83,6 +90,7 @@ public class PayrollEventService {
         PayrollRateConfig rateConfig = getRateConfig();
         PayrollCalculationResult result = payrollCalculatorService
                 .calculateBuruh(event.getKilogram(), rateConfig.getBuruhRatePerKg());
+        ensureWalletExists(event.getBuruhId(), PaymentConstants.Role.BURUH);
 
         return payrollRepository.save(Payroll.builder()
                 .ownerId(event.getBuruhId())
@@ -102,6 +110,7 @@ public class PayrollEventService {
         PayrollRateConfig rateConfig = getRateConfig();
         PayrollCalculationResult result = payrollCalculatorService
                 .calculateSupir(event.getKilogram(), rateConfig.getSupirRatePerKg());
+        ensureWalletExists(event.getSupirId(), PaymentConstants.Role.SUPIR);
 
         return payrollRepository.save(Payroll.builder()
                 .ownerId(event.getSupirId())
@@ -121,6 +130,7 @@ public class PayrollEventService {
         PayrollRateConfig rateConfig = getRateConfig();
         PayrollCalculationResult result = payrollCalculatorService
                 .calculateMandor(event.getKilogramDiakui(), rateConfig.getMandorRatePerKg());
+        ensureWalletExists(event.getMandorId(), PaymentConstants.Role.MANDOR);
 
         return payrollRepository.save(Payroll.builder()
                 .ownerId(event.getMandorId())
@@ -154,5 +164,17 @@ public class PayrollEventService {
         if (ownerId == null || ownerId.isBlank()) {
             throw new IllegalArgumentException("ownerId is required");
         }
+    }
+
+    private void ensureWalletExists(String ownerId, String ownerRole) {
+        if (walletRepository.findByOwnerId(ownerId).isPresent()) {
+            return;
+        }
+
+        walletRepository.save(Wallet.builder()
+                .ownerId(ownerId)
+                .ownerRole(ownerRole)
+                .balance(BigDecimal.ZERO)
+                .build());
     }
 }
