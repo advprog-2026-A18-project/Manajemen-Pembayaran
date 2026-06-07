@@ -105,6 +105,26 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
+    void shouldNormalizeGatewayRolePrefix() throws ServletException, IOException {
+        ObjectProvider<JwtUtils> provider = mock(ObjectProvider.class);
+        JwtUtils jwtUtils = mock(JwtUtils.class);
+        when(provider.getIfAvailable()).thenReturn(jwtUtils);
+
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(provider);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("X-User-Id", "admin-id");
+        request.addHeader("X-User-Role", "ROLE_ADMIN");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, response, chain);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        assertNotNull(authentication);
+        assertEquals("ADMIN", authentication.getAuthorities().iterator().next().getAuthority());
+    }
+
+    @Test
     void shouldSetAuthenticationFromGatewayHeadersWhenBearerTokenFailsPaymentValidation()
             throws ServletException, IOException {
         ObjectProvider<JwtUtils> provider = mock(ObjectProvider.class);

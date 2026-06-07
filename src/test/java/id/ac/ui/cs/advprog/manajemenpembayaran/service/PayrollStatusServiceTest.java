@@ -127,7 +127,7 @@ class PayrollStatusServiceTest {
     }
 
     @Test
-    void payPayrollShouldChangeAcceptedPayrollToPaidAndIncreaseWalletBalance() {
+    void payPayrollShouldChangeAcceptedPayrollToPaidAndTransferFromAdminWallet() {
         Payroll payroll = Payroll.builder()
                 .id(5L)
                 .ownerId("buruh-5")
@@ -142,7 +142,7 @@ class PayrollStatusServiceTest {
         Payroll paidPayroll = payrollStatusService.payPayroll(5L);
 
         assertEquals(PayrollStatus.PAID, paidPayroll.getStatus());
-        verify(walletTransferService).creditWallet("buruh-5", BigDecimal.valueOf(162000));
+        verify(walletTransferService).transfer("admin-default", "buruh-5", BigDecimal.valueOf(162000));
         verify(payrollRepository).save(payroll);
     }
 
@@ -159,7 +159,7 @@ class PayrollStatusServiceTest {
     }
 
     @Test
-    void acceptPayrollShouldTransferAmountFromAdminWalletToWorkerWallet() {
+    void acceptPayrollShouldNotTransferAmountFromAdminWalletToWorkerWallet() {
         Payroll payroll = Payroll.builder()
                 .id(7L)
                 .ownerId("buruh-7")
@@ -174,36 +174,36 @@ class PayrollStatusServiceTest {
         Payroll acceptedPayroll = payrollStatusService.acceptPayroll(7L);
 
         assertEquals(PayrollStatus.ACCEPTED, acceptedPayroll.getStatus());
-        verify(walletTransferService).transfer("admin-default", "buruh-7", BigDecimal.valueOf(180000));
+        verify(walletTransferService, never()).transfer("admin-default", "buruh-7", BigDecimal.valueOf(180000));
     }
 
     @Test
-    void acceptPayrollShouldRecordTransactionHistory() {
+    void payPayrollShouldRecordTransactionHistory() {
         Payroll payroll = Payroll.builder()
                 .id(9L)
                 .ownerId("buruh-9")
                 .ownerRole("BURUH")
                 .kilogram(BigDecimal.valueOf(100))
                 .amount(BigDecimal.valueOf(180000))
-                .status(PayrollStatus.PENDING)
+                .status(PayrollStatus.ACCEPTED)
                 .build();
         when(payrollRepository.findById(9L)).thenReturn(Optional.of(payroll));
         when(payrollRepository.save(payroll)).thenReturn(payroll);
 
-        payrollStatusService.acceptPayroll(9L);
+        payrollStatusService.payPayroll(9L);
 
         verify(transactionHistoryService).recordPayrollPayment("buruh-9", BigDecimal.valueOf(180000), 9L);
     }
 
     @Test
-    void acceptPayrollShouldRejectWhenAdminWalletBalanceIsInsufficient() {
+    void payPayrollShouldRejectWhenAdminWalletBalanceIsInsufficient() {
         Payroll payroll = Payroll.builder()
                 .id(8L)
                 .ownerId("buruh-8")
                 .ownerRole("BURUH")
                 .kilogram(BigDecimal.valueOf(100))
                 .amount(BigDecimal.valueOf(180000))
-                .status(PayrollStatus.PENDING)
+                .status(PayrollStatus.ACCEPTED)
                 .build();
         when(payrollRepository.findById(8L)).thenReturn(Optional.of(payroll));
         org.mockito.Mockito.doThrow(new IllegalStateException("Wallet balance is insufficient"))
@@ -212,7 +212,7 @@ class PayrollStatusServiceTest {
 
         IllegalStateException exception = assertThrows(
                 IllegalStateException.class,
-                () -> payrollStatusService.acceptPayroll(8L)
+                () -> payrollStatusService.payPayroll(8L)
         );
 
         assertEquals("Wallet balance is insufficient", exception.getMessage());
