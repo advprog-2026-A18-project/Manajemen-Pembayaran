@@ -3,7 +3,6 @@ package id.ac.ui.cs.advprog.manajemenpembayaran.controller;
 import id.ac.ui.cs.advprog.manajemenpembayaran.model.Payroll;
 import id.ac.ui.cs.advprog.manajemenpembayaran.service.PayrollStatusService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,13 +22,11 @@ public class PayrollStatusController {
     }
 
     @PostMapping("/{payrollId}/accept")
-    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Payroll> acceptPayroll(@PathVariable Long payrollId) {
         return ResponseEntity.ok(payrollStatusService.acceptPayroll(payrollId));
     }
 
     @PostMapping("/{payrollId}/reject")
-    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Payroll> rejectPayroll(
             @PathVariable Long payrollId,
             @RequestBody Map<String, String> request
@@ -38,7 +35,6 @@ public class PayrollStatusController {
     }
 
     @PostMapping("/{payrollId}/pay")
-    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Payroll> payPayroll(@PathVariable Long payrollId) {
         return ResponseEntity.ok(payrollStatusService.payPayroll(payrollId));
     }
